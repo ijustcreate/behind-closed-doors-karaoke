@@ -1,0 +1,9 @@
+{
+  "name": "Behind Closed Doors Karaoke",
+  "short_name": "BCD Karaoke",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0c0907",
+  "theme_color": "#0c0907",
+  "description": "Search, request, and queue Behind Closed Doors karaoke songs."
+}

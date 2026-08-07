@@ -1,0 +1,4 @@
+Open CODEX_HANDOFF.md and treat it as the product/technical specification.
+
+First audit the existing app. Do not throw it away and start from aesthetics alone.
+Preserve the working songbook/request/queue behavior and speakeasy visual identity, then migrate the localStorage prototype into the realtime production architecture described in the handoff.
