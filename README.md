@@ -11,7 +11,6 @@ A static, deploy-ready karaoke request and queue prototype reconstructed from th
 - "Karaoke Legend" tags sourced from [Singa's 2026 US Top 100](https://singa.com/blog/100-most-popular-karaoke-songs-united-states/)
 - Local singer profiles with optional passwords
 - Personal favorites with reorder and remove controls
-- Lyrics-provider lookup links for each catalog song
 - A public list of the night's song requests
 - Host approval into queue
 - Drag/reorder queue plus touch-friendly up/down buttons
