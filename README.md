@@ -4,11 +4,13 @@ A static, deploy-ready karaoke request and queue prototype reconstructed from th
 
 ## Included
 - **4,196 songs** (A Day in the Life through You Are the Reason)
-- Search title, artist, TJ number, and genre
-- Sort by title, artist, genre, duet/feature, and number
-- Broad genre tags and duet/feature flags
-- Local singer profiles
-- Persistent song requests
+- Search title, artist, and genre
+- Sort by title, artist, genre, and TJ number
+- Broad genre filters plus a Duets filter
+- "Karaoke Legend" tags sourced from [Singa's 2026 US Top 100](https://singa.com/blog/100-most-popular-karaoke-songs-united-states/)
+- Local singer profiles with optional passwords
+- Personal favorites with reorder and remove controls
+- A public list of the night's song requests
 - Host approval into queue
 - Drag/reorder queue plus touch-friendly up/down buttons
 - Done action records the song in that singer's history
