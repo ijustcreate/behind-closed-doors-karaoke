@@ -51,6 +51,9 @@
 
   window.addEventListener('DOMContentLoaded', () => {
     document.head.insertAdjacentHTML('beforeend', '<style>.accountSection>summary:after{content:"⌃"!important;transform:none!important}.accountSection:not([open])>summary:after{content:"›"!important;transform:none!important}.drinkItem.hasPhoto:after{display:none!important}.drinkEye{display:inline-grid!important;place-items:center;width:18px!important;height:18px!important;padding:0!important;margin:0 5px 2px 0!important;border:0!important;background:transparent!important;color:#8b6424!important;vertical-align:middle}.drinkEye svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.8}.chatActions{position:fixed;z-index:1000;display:grid;min-width:205px;padding:5px;background:linear-gradient(145deg,#2b1a11,#100b08);border:1px solid rgba(201,162,87,.75);box-shadow:0 16px 42px rgba(0,0,0,.62);border-radius:4px}.chatActions button{border:0;background:transparent;color:#efdbaf;text-align:left;padding:11px 12px;font:600 12px ui-sans-serif,system-ui}.chatActions button:hover{background:rgba(201,162,87,.14)}.chatContext{display:none!important}</style>');
+    const nudge = document.querySelector('.chatNudge'); if (nudge) nudge.remove(); document.getElementById('heroChatButton')?.remove();
+    const songbookHeader = document.querySelector('[data-view="songbook"] .songbookLayout .sectionHead'); if (songbookHeader && !document.getElementById('songbookChatButton')) songbookHeader.insertAdjacentHTML('beforeend', '<button id="songbookChatButton" class="btn gold small" onclick="switchTab(\'chat\')">Karaoke Chat</button>');
+    document.head.insertAdjacentHTML('beforeend', '<style>#songbookChatButton{margin-left:auto;white-space:nowrap}@media(max-width:620px){#songbookChatButton{font-size:9px;padding:6px 7px}}</style>');
     renderDrinkMenu(); renderChat();
   });
 })();
