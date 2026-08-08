@@ -2,7 +2,8 @@ create table if not exists public.karaoke_chat_messages (
   id text primary key,
   profile_id text not null check (char_length(profile_id) between 1 and 80),
   singer_name text not null check (char_length(btrim(singer_name)) between 1 and 40),
-  message text not null check (char_length(btrim(message)) between 1 and 280),
+  message text not null check (char_length(btrim(message)) between 1 and 1000),
+  image_urls jsonb not null default '[]'::jsonb,
   night_key date not null,
   created_at timestamptz not null default now()
 );
@@ -30,6 +31,6 @@ create policy "karaoke chat accepts short messages"
   with check (
     char_length(profile_id) between 1 and 80
     and char_length(btrim(singer_name)) between 1 and 40
-    and char_length(btrim(message)) between 1 and 280
+    and char_length(btrim(message)) between 1 and 1000
     and created_at between now() - interval '5 minutes' and now() + interval '5 minutes'
   );
