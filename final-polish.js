@@ -8,7 +8,8 @@
   };
   function currentMenu() { return activeDrinkMenu(); }
   const nativeOpenSettings = window.openSettings;
-  const applySearchTranslation = language => { const input = document.getElementById('search'); const copy = APP_TRANSLATIONS[language || currentUser()?.language || 'en']?.search; if (input && copy) input.placeholder = copy; };
+  const accountTabCopy = { en: 'My Account', es: 'Mi cuenta', ko: '내 계정', zh: '我的账户', ja: 'マイアカウント', fr: 'Mon compte', it: 'Il mio account', ru: 'Мой аккаунт', tl: 'Aking account' };
+  const applySearchTranslation = language => { const resolved = language || currentUser()?.language || 'en', input = document.getElementById('search'), copy = APP_TRANSLATIONS[resolved]?.search, tab = document.getElementById('profileTab'); if (input && copy) input.placeholder = copy; if (tab) tab.textContent = accountTabCopy[resolved] || accountTabCopy.en; };
   const nativeSetProfileLanguage = window.setProfileLanguage;
   window.setProfileLanguage = language => { nativeSetProfileLanguage(language); setTimeout(() => applySearchTranslation(language), 0); };
   window.openSettings = () => { nativeOpenSettings(); setTimeout(() => { const modal = document.querySelector('#settingsModal .modal'); if (!modal) return; modal.querySelector('.eyebrow').textContent = 'Admin App Settings'; const lantern = modal.querySelector('.lanternSetting'); if (lantern) lantern.innerHTML = `<div><strong>Manual lantern override</strong><p>Default schedule: Thursday–Sunday, 7 PM–2 AM. Resets at 5 AM.</p></div><label class="switch"><input id="lanternManualToggle" type="checkbox" ${state.lanternOverride?.on ? 'checked' : ''} onchange="setLanternManual(this.checked)"><span></span></label>`; setupAdminCards(); loadAdminProfiles(); }, 0); };
