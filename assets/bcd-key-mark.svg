@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110" role="img" aria-label="Behind Closed Doors key mark">
+  <defs>
+    <linearGradient id="gold" x1="12" y1="8" x2="108" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#f0d488"/>
+      <stop offset=".42" stop-color="#c9a257"/>
+      <stop offset="1" stop-color="#805c25"/>
+    </linearGradient>
+  </defs>
+  <path d="M60 7 111 100H9Z" fill="none" stroke="url(#gold)" stroke-width="4" stroke-linejoin="round"/>
+  <g fill="none" stroke="url(#gold)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="60" cy="39" r="12"/>
+    <path d="M60 51v30m0-11h14m-14 11h9"/>
+  </g>
+  <circle cx="60" cy="39" r="3" fill="#c9a257"/>
+</svg>
