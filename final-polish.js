@@ -50,11 +50,13 @@
     chat_20: { title: 'Chatty Kathy', copy: 'Send 20 messages in Karaoke Chat.' },
     favorite_five: { title: 'Pocket Setlist', copy: 'Save five favorite songs.' },
     request_ten: { title: 'Ten on the Table', copy: 'Request ten songs over time.' },
-    night_owl: { title: 'After Hours', copy: 'Send a chat message after midnight.' },
+    night_owl: { title: 'Night Owl', copy: 'Sing a song after midnight.' },
+    closing_time: { title: 'Closing Time', copy: 'Sing “Closing Time” after 1:30 a.m.' },
+    early_bird: { title: 'Early Bird', copy: 'Sing a song between 7 and 8 p.m.' },
     catalog_explorer: { title: 'Deep Cut', copy: 'Explore songs from five different genres.' }
   });
   const nativeSendChat = window.sendChat;
-  window.sendChat = event => { const input = document.getElementById('chatInput'), hasMessage = !!input?.value.trim(); nativeSendChat(event); if (!hasMessage) return; const user = currentUser(); if (!user) return; state.chatMessageCounts = { ...(state.chatMessageCounts || {}), [user.id]: (state.chatMessageCounts?.[user.id] || 0) + 1 }; saveState(); awardAchievement('chat_first'); if (state.chatMessageCounts[user.id] >= 20) awardAchievement('chat_20'); const hour = +new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', hour: 'numeric', hourCycle: 'h23' }).format(new Date()); if (hour < 2) awardAchievement('night_owl'); };
+  window.sendChat = event => { const input = document.getElementById('chatInput'), hasMessage = !!input?.value.trim(); nativeSendChat(event); if (!hasMessage) return; const user = currentUser(); if (!user) return; state.chatMessageCounts = { ...(state.chatMessageCounts || {}), [user.id]: (state.chatMessageCounts?.[user.id] || 0) + 1 }; saveState(); awardAchievement('chat_first'); if (state.chatMessageCounts[user.id] >= 20) awardAchievement('chat_20'); };
   const nativeToggleFavorite = window.toggleFavorite;
   window.toggleFavorite = id => { nativeToggleFavorite(id); const user = currentUser(); if (user && state.favorites.filter(item => item.userId === user.id).length >= 5) awardAchievement('favorite_five'); };
   const nativeRenderSongs = window.renderSongs;
