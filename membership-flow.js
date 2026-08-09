@@ -8,7 +8,7 @@
     document.head.append(stylesheet);
   }
 
-  const RUNES = ['ᚨ', 'ᛒ', 'ᚲ', 'ᛞ', 'ᛖ', 'ᚠ'];
+  const MUSIC_NOTES = ['♩', '♪', '♫', '♬', '♩♪', '♪♫'];
   const POINTS = [
     { x: 160, y: 21, left: 50, top: 7 },
     { x: 272, y: 84, left: 85, top: 28 },
@@ -312,9 +312,9 @@
   };
 
   function updateGlyphReady() {
-    const runes = document.getElementById('clubGlyphReadyRunes');
+    const notes = document.getElementById('clubGlyphReadyNotes');
     const label = document.getElementById('clubGlyphReadyLabel');
-    if (runes) runes.textContent = createdGlyph ? [...createdGlyph].map(value => RUNES[+value]).join(' ') : '○ ○ ○ ○';
+    if (notes) notes.textContent = createdGlyph ? [...createdGlyph].map(value => MUSIC_NOTES[+value]).join(' ') : '○ ○ ○ ○';
     if (label) label.textContent = createdGlyph ? 'Glyph password ready' : 'No glyph selected yet';
   }
 
@@ -389,7 +389,7 @@
   function replayGlyphEntrance() {
     const stage = document.getElementById('glyphStage');
     if (!stage) return;
-    stage.querySelectorAll('.glyphTriangle.second,.glyphCore,.glyphPoint,.glyphPoint:before,.glyphRune,.glyphDigit').forEach(element => {
+    stage.querySelectorAll('.glyphTriangle.first,.glyphTriangle.second,.glyphCore,.glyphPoint,.glyphPoint:before,.glyphNote,.glyphDigit').forEach(element => {
       element.style.animation = 'none';
       void element.getBoundingClientRect();
       element.style.animation = '';
@@ -402,13 +402,13 @@
     const slots = document.querySelectorAll('.glyphSlot');
     slots.forEach((slot, index) => {
       const value = values[index];
-      slot.textContent = value === undefined ? '·' : RUNES[+value];
+      slot.textContent = value === undefined ? '·' : MUSIC_NOTES[+value];
       slot.classList.toggle('filled', value !== undefined);
     });
     document.querySelectorAll('.glyphPoint').forEach(button => {
       const count = values.filter(value => +value === +button.dataset.value).length;
       button.classList.toggle('selected', count > 0);
-      button.style.setProperty('--point-glow', `${7 + count * 9}px`);
+      button.style.setProperty('--point-glow', `${5 + count * 8}px`);
       button.style.filter = count ? `brightness(${1 + count * .22}) drop-shadow(0 0 ${4 + count * 3}px rgba(61,181,245,.72))` : '';
     });
     const lines = document.getElementById('glyphLines');
@@ -438,7 +438,7 @@
     const accept = document.getElementById('glyphAcceptButton');
     glyphSession = { kind, values: [] };
     if (kind === 'create-first') {
-      title.textContent = 'Create your glyph'; prompt.textContent = 'Touch 4 points · repeats are allowed'; accept.textContent = 'Accept glyph';
+      title.textContent = 'Create your glyph'; prompt.textContent = 'Touch 4 points'; accept.textContent = 'Accept glyph';
     } else if (kind === 'create-confirm') {
       title.textContent = 'Repeat your glyph'; prompt.textContent = 'Touch the same 4 points again'; accept.textContent = 'Confirm glyph';
     } else {
@@ -556,15 +556,15 @@
           <div class="clubField"><label for="clubCreateDisplay">Display name <span aria-hidden="true">&middot;</span> optional</label><input id="clubCreateDisplay" class="control" maxlength="40" autocomplete="nickname" placeholder="What people see in the club"><small>Display names do not need to be unique.</small></div>
           <div class="clubPasswordLegend">Choose a password style</div><div class="clubPasswordModes"><button class="clubPasswordMode active" data-mode="regular" type="button" onclick="setClubPasswordMode('regular')">Regular password</button><button class="clubPasswordMode" data-mode="glyph" type="button" onclick="setClubPasswordMode('glyph')">Four-point glyph</button></div>
           <div id="clubRegularPasswordPanel" class="clubPasswordPanel"><div class="clubField"><label for="clubCreatePassword">Password</label><input id="clubCreatePassword" class="control" type="password" maxlength="13" autocomplete="new-password" placeholder="Up to 13 characters"><small>No special rules. Maximum 13 characters; leave it blank for ID-only entry.</small></div><div class="clubField"><label for="clubCreatePasswordAgain">Enter it again</label><input id="clubCreatePasswordAgain" class="control" type="password" maxlength="13" autocomplete="new-password" placeholder="Repeat your password"></div></div>
-          <div id="clubGlyphPasswordPanel" class="clubPasswordPanel" hidden><div class="clubGlyphReady"><div><strong id="clubGlyphReadyLabel">No glyph selected yet</strong><div id="clubGlyphReadyRunes" class="clubGlyphRunes">○ ○ ○ ○</div></div><button class="btn ghost small" type="button" onclick="openCreateGlyph()">Create glyph</button></div></div>
+          <div id="clubGlyphPasswordPanel" class="clubPasswordPanel" hidden><div class="clubGlyphReady"><div><strong id="clubGlyphReadyLabel">No glyph selected yet</strong><div id="clubGlyphReadyNotes" class="clubGlyphNotes">○ ○ ○ ○</div></div><button class="btn ghost small" type="button" onclick="openCreateGlyph()">Create glyph</button></div></div>
           <p id="clubCreateStatus" class="clubFormStatus" aria-live="polite"></p><div class="modalActions"><button class="btn ghost" type="button" onclick="backToClubWelcome()">Back</button><button id="clubCreateSubmit" class="btn gold" type="button" onclick="submitNewMember()">Join the Club</button></div>
         </div>
       </div>
       <div id="glyphPasswordModal" class="modalWrap" role="dialog" aria-modal="true" aria-labelledby="glyphTitle">
         <div class="modal glyphModal"><button class="modalClose" type="button" onclick="closeGlyphPassword()" aria-label="Close glyph password">&times;</button><div class="eyebrow">BCDKC glyph password</div><h3 id="glyphTitle">Create your glyph</h3><div id="glyphPrompt" class="glyphPrompt">Touch 4 points</div>
           <div class="glyphSequence" aria-live="polite">${[0, 1, 2, 3].map(() => '<span class="glyphSlot">·</span>').join('')}</div>
-          <div id="glyphStage" class="glyphStage"><svg class="glyphGeometry" viewBox="0 0 320 300" aria-hidden="true"><polygon class="glyphTriangle" points="160,30 282,242 38,242"></polygon><polygon class="glyphTriangle second" points="160,30 282,242 38,242"></polygon><g id="glyphLines"></g></svg><div class="glyphCore" aria-hidden="true"></div>
-            ${POINTS.map((point, value) => `<button class="glyphPoint" style="left:${point.left}%;top:${point.top}%;--point-index:${value}" data-value="${value}" type="button" onclick="pressGlyphPoint(${value})" aria-label="Glyph point ${value}"><span class="glyphRune">${RUNES[value]}</span><span class="glyphDigit">${value}</span></button>`).join('')}
+          <div id="glyphStage" class="glyphStage"><svg class="glyphGeometry" viewBox="0 0 320 300" aria-hidden="true"><defs><radialGradient id="glyphHalo" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#174e70" stop-opacity=".18"></stop><stop offset=".58" stop-color="#08263a" stop-opacity=".08"></stop><stop offset="1" stop-color="#020608" stop-opacity="0"></stop></radialGradient></defs><circle class="glyphField" cx="160" cy="150" r="142"></circle><circle class="glyphOrbit" cx="160" cy="150" r="126"></circle><polygon class="glyphTriangle first" points="160,21 272,216 48,216"></polygon><polygon class="glyphTriangle second" points="160,279 48,84 272,84"></polygon><circle class="glyphInnerOrbit" cx="160" cy="150" r="57"></circle><g id="glyphLines"></g></svg><div class="glyphCore" aria-hidden="true"></div>
+            ${POINTS.map((point, value) => `<button class="glyphPoint" style="left:${point.left}%;top:${point.top}%;--point-index:${value}" data-value="${value}" type="button" onclick="pressGlyphPoint(${value})" aria-label="Glyph point ${value}"><span class="glyphNote" aria-hidden="true">${MUSIC_NOTES[value]}</span><span class="glyphDigit">${value}</span></button>`).join('')}
           </div><p id="glyphStatus" class="glyphStatus" aria-live="polite"></p><div class="modalActions glyphActions"><button class="btn ghost" type="button" onclick="closeGlyphPassword()">Cancel</button><button id="glyphAcceptButton" class="btn gold" type="button" onclick="acceptGlyph()" disabled>Accept glyph</button></div>
         </div>
       </div>`);
