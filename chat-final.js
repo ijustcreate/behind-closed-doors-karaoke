@@ -3,6 +3,7 @@
   let draftImages = [];
   let longPressTimer = null;
   let longPressOrigin = null;
+  const EDIT_WINDOW_MS = 5 * 60 * 1000;
 
   const chatApi = async body => {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/karaoke-chat`, {
@@ -70,6 +71,13 @@
   };
 
   function closeChatMenu() { document.getElementById('chatActions')?.remove(); }
+  function editTimeLeft(message) {
+    return Math.max(0, EDIT_WINDOW_MS - (Date.now() - message.createdAt));
+  }
+  function formatEditTimeLeft(milliseconds) {
+    const seconds = Math.ceil(milliseconds / 1000);
+    return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+  }
   function positionMenu(menu, point) {
     document.body.append(menu);
     const rect = menu.getBoundingClientRect();
@@ -78,15 +86,24 @@
   }
   function openOwnActions(id, point) {
     closeChatMenu();
+    const message = chatMessages.find(item => item.id === id);
+    if (!message) return;
     const menu = document.createElement('div');
     menu.id = 'chatActions';
     menu.className = 'chatActions ownActions';
     menu.dataset.chatId = id;
     menu.setAttribute('role', 'menu');
-    menu.innerHTML = '<button type="button" data-action="color">Change my message color</button><button type="button" data-action="edit">Edit this message</button>';
+    const renderActions = () => {
+      const remaining = editTimeLeft(message);
+      menu.innerHTML = '<button type="button" data-action="color">Change my color</button>' +
+        (remaining > 0 ? `<button type="button" data-action="edit">Edit message (${formatEditTimeLeft(remaining)} left)</button>` : '');
+    };
+    renderActions();
     positionMenu(menu, point);
-    menu.querySelector('[data-action="color"]').addEventListener('click', event => { event.stopPropagation(); closeChatMenu(); openChatColorPicker(); });
-    menu.querySelector('[data-action="edit"]').addEventListener('click', event => { event.stopPropagation(); closeChatMenu(); openChatEdit(id); });
+    const countdown = setInterval(() => {
+      if (!menu.isConnected) return clearInterval(countdown);
+      renderActions();
+    }, 1000);
   }
   function openReactionActions(id, point) {
     closeChatMenu();
@@ -133,6 +150,10 @@
 
   window.openChatEdit = function (id) {
     closeChatMenu();
+    const message = chatMessages.find(item => item.id === id);
+    if (!message || message.profileId !== currentUser()?.id || editTimeLeft(message) <= 0) {
+      return toast('This message can no longer be edited');
+    }
     chatEditingId = id;
     renderChat();
     setTimeout(() => {
@@ -144,6 +165,11 @@
   window.saveChatEdit = async function (id) {
     const field = document.getElementById('editChatText'), user = currentUser(), message = chatMessages.find(item => item.id === id), text = field?.value.trim() || '';
     if (!user || !message) return;
+    if (message.profileId !== user.id || editTimeLeft(message) <= 0) {
+      chatEditingId = null;
+      renderChat();
+      return toast('This message can no longer be edited');
+    }
     if (!text && !(message.images || []).length) return toast('A message cannot be empty');
     try {
       const result = await chatApi({ action: 'edit', messageId: id, profileId: user.id, message: text });

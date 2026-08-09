@@ -10,14 +10,43 @@
 }
 .clubWelcome{text-align:center;padding:7px 4px 2px}
 .clubWelcomeMark{width:76px;height:70px;margin:2px auto 14px;background:url('assets/bcd-key-mark.svg') center/contain no-repeat;filter:drop-shadow(0 0 12px rgba(213,171,78,.25))}
-.clubWelcome h3,.clubStep h3{margin:3px 0 7px;color:#f2dba7;font:500 clamp(27px,7vw,37px)/1.05 Georgia,serif}
-.clubWelcomeName{margin:0;color:#f4deb0;font:500 18px/1.25 Georgia,serif;letter-spacing:.02em}
+.clubWelcome h3{margin:9px 0 7px;color:#f2dba7;font:500 clamp(27px,7vw,37px)/1.05 Georgia,serif}
+.clubStep h3{margin:3px 0 7px;color:#f2dba7;font:500 clamp(27px,7vw,37px)/1.05 Georgia,serif}
+.clubWelcomeName{margin:0;color:#f4deb0;font:500 clamp(24px,5.5vw,30px)/1.2 Georgia,serif!important;letter-spacing:.025em}
 .clubWelcomeCopy{max-width:340px;margin:11px auto 20px!important;color:#cbb895!important;line-height:1.5!important}
-.clubChoiceGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:15px}
-.clubChoiceGrid .btn{min-height:46px;white-space:normal}
+.clubWelcomeEntry{display:flex;align-items:center;gap:8px;max-width:390px;margin:0 auto 4px}
+.clubWelcomeField{flex:1;min-width:0;margin:0}
+.clubWelcomeField .control{height:46px;box-sizing:border-box}
+.clubWelcomeHint{margin:0!important;color:#8f826f!important;font-size:11px!important;line-height:1.4!important}
+.clubWelcomeHint.invalid{color:#d79b78!important}
+.clubChoiceGrid{display:flex;flex-direction:column;align-items:center;gap:5px;max-width:340px;margin:15px auto 0}
+.clubChoiceGrid .btn{white-space:normal}
+.clubMemberContinue{display:inline-flex!important;align-items:center;justify-content:center;gap:7px;flex:0 0 68px;min-width:68px;height:46px;min-height:46px!important;padding:6px 9px!important}
+.clubWelcomeEntry .clubMemberContinue{align-self:center}
+.clubContinueKey{display:block;width:30px;height:30px;background:#090705;mask:url('assets/bcd-key-mark.svg') center/108% no-repeat;-webkit-mask:url('assets/bcd-key-mark.svg') center/108% no-repeat;filter:drop-shadow(0 0 .55px #090705)}
+.clubContinueArrow{font:900 25px/.95 Arial,sans-serif;transform:translateY(-1px)}
+.clubNewMember{display:inline-flex!important;align-items:center;justify-content:center;min-height:42px!important;min-width:156px;padding:9px 17px!important;border:1px solid #f0cc75!important;border-radius:3px!important;background:linear-gradient(#e5c26a,#ad7a27)!important;box-shadow:inset 0 1px 0 rgba(255,244,202,.56),0 2px 7px rgba(0,0,0,.28)!important;color:#241607!important;cursor:pointer;font:800 11px/1 ui-sans-serif,system-ui,-apple-system,sans-serif!important;letter-spacing:.11em!important;text-decoration:none!important;text-transform:uppercase}
+.clubNewMemberFree{margin:0!important;color:#79c4ef!important;font:700 11px/1.35 ui-sans-serif,system-ui,-apple-system,sans-serif!important;letter-spacing:.04em!important;text-transform:none}
+.clubNewMember:hover,.clubNewMember:focus-visible{border-color:#ffe39a!important;background:linear-gradient(#f2d67e,#bd8730)!important;color:#160e05!important;outline:none}
+.clubWelcomeModal .modalClose{top:15px}
+.clubMemberContinue:disabled,#clubReturningSubmit:disabled{cursor:not-allowed;opacity:.42;filter:saturate(.3);box-shadow:none!important}
+.clubActionReady{animation:clubActionGlow .38s ease-out;box-shadow:0 0 0 1px rgba(255,221,145,.22),0 0 19px rgba(201,162,87,.27)!important}
+@keyframes clubActionGlow{from{filter:brightness(.72);box-shadow:none}to{filter:brightness(1);box-shadow:0 0 0 1px rgba(255,221,145,.22),0 0 19px rgba(201,162,87,.27)}}
 .clubStep .clubBack{display:inline-flex;align-items:center;gap:5px;margin:-3px 0 12px;padding:4px 0;border:0;background:none;color:#c9a257;font-size:11px;letter-spacing:.1em;text-transform:uppercase}
+.clubStep .clubBackIcon{justify-content:center;min-width:32px;min-height:30px;margin:-5px 0 7px;padding:2px;font-size:22px;letter-spacing:0;text-transform:none}
 .clubStepCopy{margin:0 0 16px!important;color:#cbb895!important;line-height:1.45!important}
 .clubField{display:grid;gap:6px;margin:12px 0;text-align:left}
+.clubMemberLookup,.clubReturningPasswordField{max-width:340px;margin-left:auto;margin-right:auto}
+.clubReturningPasswordEntry{display:flex;align-items:center;gap:8px;max-width:340px;margin:0 auto}
+.clubReturningPasswordEntry .control{flex:1;min-width:0;height:46px;box-sizing:border-box}
+.clubReturningStep{text-align:center}
+.clubReturningStep .clubBack{display:flex;margin-left:0}
+.clubReturningStep .clubStepCopy{margin-bottom:18px!important}
+.clubReturningStep .clubField{text-align:center}
+.clubReturningStep .control{text-align:center}
+.clubReturningActions{max-width:340px;margin:0 auto!important;justify-content:center!important}
+.clubReturningActions #clubReturningSubmit{width:100%;min-height:46px}
+.clubReturningGlyph{display:block;width:100%;max-width:340px;min-height:46px;margin:10px auto 0}
 .clubField label,.clubPasswordLegend{color:#dfc58f;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
 .clubField small{color:#8f826f;font-size:10px;line-height:1.35}
 .clubField .control{width:100%;box-sizing:border-box;font-size:16px}
@@ -36,6 +65,7 @@
 .clubGlyphNotes:disabled{opacity:.46}
 .clubGlyphNotes.revealed{color:#c9ecff;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:18px;letter-spacing:.38em;text-shadow:0 0 7px #219de2,0 0 15px rgba(44,166,239,.66)}
 .clubFormStatus{min-height:18px;margin:8px 0 0;color:#d79b78;font-size:11px;line-height:1.4}
+.clubReturningStep .clubFormStatus{max-width:340px;margin:8px auto 0}
 .clubFormStatus.success{color:#8bd0a1}
 .clubSuggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .clubSuggestions button{padding:6px 9px;border:1px solid rgba(78,174,232,.45);background:rgba(38,116,165,.14);color:#a9ddff;border-radius:999px;font-size:11px}
@@ -45,6 +75,7 @@
 .clubGate h3{margin:3px 0 9px;color:#f2dba7;font:500 31px/1.05 Georgia,serif}
 .clubGate p{max-width:320px;margin:0 auto 18px!important;color:#cbb895!important;line-height:1.5!important}
 .clubFree{display:inline-block;margin-top:4px;color:#79c4ef;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.clubGate .modalActions{justify-content:center}
 
 .glyphModal{width:min(450px,calc(var(--club-vv-width,100vw) - 16px));max-height:calc(var(--club-vv-height,100dvh) - 12px);overflow:auto;text-align:center;padding:20px 16px 16px!important;background:radial-gradient(circle at 50% 45%,rgba(10,68,103,.22),transparent 42%),linear-gradient(155deg,#100b08 0%,#080706 56%,#030608 100%)!important}
 .glyphModal h3{margin:3px 0 2px;color:#e9d4a7;font:500 27px/1.1 Georgia,serif}
@@ -65,11 +96,15 @@
 .glyphTriangle.second{stroke:#4380a1;animation:glyphTriangleSet 1.05s cubic-bezier(.18,.82,.2,1) both}
 @keyframes glyphTriangleTrace{from{stroke-dasharray:650;stroke-dashoffset:650;opacity:0}to{stroke-dasharray:650;stroke-dashoffset:0;opacity:.48}}
 @keyframes glyphTriangleSet{0%{transform:rotate(-120deg) scale(.66);opacity:0}55%{opacity:.3}100%{transform:none;opacity:.48}}
-.glyphConnection{stroke:#78d3ff;stroke-width:2.35;stroke-linecap:round;opacity:.9;filter:drop-shadow(0 0 4px #2b9bd5) drop-shadow(0 0 8px rgba(43,155,213,.5));animation:glyphLineIn .24s ease-out both}
+.glyphConnection{stroke:#78d3ff;stroke-width:2.35;stroke-linecap:round;vector-effect:non-scaling-stroke;opacity:.9;filter:drop-shadow(0 0 4px #2b9bd5) drop-shadow(0 0 8px rgba(43,155,213,.5));animation:glyphLineIn .24s ease-out both}
 @keyframes glyphLineIn{from{stroke-dasharray:180;stroke-dashoffset:180;opacity:0}to{stroke-dasharray:180;stroke-dashoffset:0;opacity:.9}}
-.glyphCore{position:absolute;left:50%;top:50%;z-index:2;width:80px;height:80px;transform:translate(-50%,-50%);border:1px solid rgba(210,169,84,.7);border-radius:50%;background:#040506 url('assets/bcd-key-mark.svg') center/51px auto no-repeat;box-shadow:0 0 0 5px rgba(2,6,8,.92),0 0 0 6px rgba(65,153,204,.34),0 0 24px rgba(38,148,215,.15),inset 0 0 22px #000;animation:glyphCoreWake 1s ease both}
+.glyphCore{position:absolute;left:50%;top:50%;z-index:2;display:grid;place-items:center;width:80px;height:80px;transform:translate(-50%,-50%);border:1px solid rgba(210,169,84,.7);border-radius:50%;background:radial-gradient(circle at 50% 43%,#10120f,#040506 70%);box-shadow:0 0 0 5px rgba(2,6,8,.92),0 0 0 6px rgba(65,153,204,.34),0 0 24px rgba(38,148,215,.15),inset 0 0 22px #000;animation:glyphCoreWake 1s ease both}
 .glyphCore:after{content:"";position:absolute;inset:-12px;border:1px solid rgba(65,153,204,.12);border-radius:50%}
 @keyframes glyphCoreWake{0%{transform:translate(-50%,-50%) scale(.55);filter:brightness(.2)}65%{transform:translate(-50%,-50%) scale(1.04);filter:brightness(1.2)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
+.glyphCoreIcon{position:relative;z-index:1;width:58px;height:58px;overflow:visible;background:url('assets/bcd-key-mark.svg') center/contain no-repeat;filter:drop-shadow(0 0 4px rgba(221,180,84,.28))}
+.glyphCoreMark{display:none;animation:none!important}
+.glyphMic{stroke-width:2.5}
+.glyphNoteLeft,.glyphNoteRight{stroke-width:1.7;opacity:.92}
 .glyphPoint{--point-glow:5px;position:absolute;z-index:4;display:grid;place-items:center;width:46px;height:46px;margin:-23px;padding:0;touch-action:manipulation;-webkit-tap-highlight-color:transparent;border:1px solid rgba(99,192,239,.52);border-radius:50%;background:radial-gradient(circle at 40% 32%,rgba(25,81,113,.78),rgba(3,10,14,.98) 68%);color:#a8dfff;box-shadow:0 0 var(--point-glow) rgba(41,157,224,.26),inset 0 0 0 3px rgba(4,13,18,.74),inset 0 0 12px rgba(44,154,216,.14);font:700 17px/1 ui-monospace,SFMono-Regular,Consolas,monospace;animation:glyphPointRadiate .56s cubic-bezier(.1,.8,.2,1) both;animation-delay:calc(.1s * var(--point-index))}
 .glyphPoint:before{content:"";position:absolute;inset:-1px;border:1px solid rgba(91,194,247,.22);border-radius:50%;animation:glyphRing 1.55s ease-out calc(.09s * var(--point-index)) 1}
 @keyframes glyphPointRadiate{from{opacity:0;transform:scale(.3)}70%{opacity:1;transform:scale(1.07)}to{opacity:1;transform:scale(1)}}
@@ -87,8 +122,17 @@
 .glyphStatus.error{color:#e09a91}
 .glyphStage.wrong{animation:glyphWrong .38s ease}
 @keyframes glyphWrong{20%,60%{transform:translateX(-7px);filter:hue-rotate(125deg)}40%,80%{transform:translateX(7px)}100%{transform:none}}
-.glyphActions{justify-content:center!important;margin-top:7px!important}
-.glyphActions .btn{min-width:108px}
+.glyphStage.is-complete .glyphCore{animation:glyphCoreComplete .36s cubic-bezier(.18,.9,.25,1) both}
+.glyphStage.is-complete .glyphConnection{stroke:#a4e7ff;filter:drop-shadow(0 0 5px #53c8ff) drop-shadow(0 0 13px rgba(68,184,243,.72))}
+.glyphStage.accepted .glyphCore{animation:glyphCoreAccepted .48s cubic-bezier(.15,.86,.24,1) both}
+@keyframes glyphCoreComplete{50%{transform:translate(-50%,-50%) scale(1.12);filter:brightness(1.45)}100%{transform:translate(-50%,-50%) scale(1)}}
+@keyframes glyphCoreAccepted{0%{transform:translate(-50%,-50%) scale(1)}48%{transform:translate(-50%,-50%) scale(1.2);filter:brightness(1.65)}100%{transform:translate(-50%,-50%) scale(1);filter:brightness(1)}}
+.glyphUndo{display:grid;place-items:center;width:44px;height:44px;margin:-1px auto 2px;padding:0;border:1px solid rgba(99,192,239,.66);border-radius:50%;background:radial-gradient(circle at 40% 32%,rgba(34,119,169,.82),rgba(4,21,33,.98) 70%);box-shadow:0 0 15px rgba(45,164,235,.34),inset 0 0 0 3px rgba(4,17,27,.68),inset 0 0 11px rgba(90,192,247,.18);color:#a9e6ff;cursor:pointer;animation:glyphUndoIn .2s ease-out both}
+.glyphUndo[hidden]{display:none}
+.glyphUndo svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 0 4px rgba(94,201,255,.7))}
+.glyphUndo:hover,.glyphUndo:focus-visible{border-color:#bceeff;color:#e3f8ff;outline:none;filter:brightness(1.14)}
+.glyphUndo:active{transform:scale(.92)}
+@keyframes glyphUndoIn{from{opacity:0;transform:translateY(-5px) scale(.75)}to{opacity:1;transform:none}}
 #profileTab.joinClubTab{color:#f1d397}
 #profileTab.joinClubTab.active{background:rgba(123,24,33,.24);box-shadow:inset 0 0 0 1px rgba(201,162,87,.36)}
 #heroChatButton.guestChatButton{white-space:normal!important;max-width:132px;line-height:1.15!important}
@@ -102,15 +146,20 @@
   .clubModal{width:calc(var(--club-vv-width,100vw) - 18px);padding:20px 17px!important}
   .clubWelcomeMark{width:66px;height:61px}
   .clubWelcome h3,.clubStep h3{font-size:29px}
-  .clubChoiceGrid{grid-template-columns:1fr}
+  .clubWelcomeName{font-size:24px}
+  .clubWelcomeEntry{max-width:100%}
+  .clubChoiceGrid{max-width:100%}
   .clubFieldRow{grid-template-columns:1fr}
   .glyphModal{padding:17px 10px 12px!important}
   .glyphStage{width:min(306px,88vw)}
   .glyphPoint{width:44px;height:44px;margin:-22px}
-  .glyphCore{width:72px;height:72px;background-size:46px auto}
+  .glyphCore{width:72px;height:72px}
+  .glyphCoreIcon{width:53px;height:53px}
   #heroChatButton.guestChatButton{max-width:116px;font-size:8px!important;padding:6px 7px!important}
 }
 
 @media(prefers-reduced-motion:reduce){
-  .glyphTriangle.first,.glyphTriangle.second,.glyphCore,.glyphPoint,.glyphPoint:before,.glyphNote,.glyphDigit,.glyphConnection,.glyphSlot.filled{animation-duration:.01ms!important;animation-delay:0ms!important;animation-iteration-count:1!important}
+  .glyphTriangle.first,.glyphTriangle.second,.glyphCore,.glyphCoreMark,.glyphPoint,.glyphPoint:before,.glyphNote,.glyphDigit,.glyphConnection,.glyphSlot.filled,.glyphUndo{animation-duration:.01ms!important;animation-delay:0ms!important;animation-iteration-count:1!important}
 }
+
+.member-signed-in .monogram{background-image:url('assets/bcd-karaoke-mark.svg')!important}

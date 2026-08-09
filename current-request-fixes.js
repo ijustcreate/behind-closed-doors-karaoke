@@ -53,6 +53,8 @@
     actions.querySelectorAll('button[onclick*="changePassword"]').forEach(button=>{if(button!==password)button.remove()});
     password.textContent=user.passwordHash?(PROFILE_LANGUAGES[language()]?.changePassword||'Change password'):text.password;
     actions.querySelectorAll('button').forEach(button=>{if(button!==password&&button.textContent.trim()===password.textContent.trim())button.remove()});
+    let adminButton=document.getElementById('profileAdminSettingsButton');
+    if(user.isAdmin){if(!adminButton){adminButton=document.createElement('button');adminButton.id='profileAdminSettingsButton';adminButton.type='button';adminButton.className='btn small';adminButton.onclick=openSettings;actions.insertBefore(adminButton,password)}adminButton.textContent='Admin settings'}else adminButton?.remove();
     let color=document.getElementById('profileChatColorButton');
     if(!color){color=document.createElement('button');color.id='profileChatColorButton';color.type='button';color.className='btn small';color.onclick=openChatColorPicker;actions.append(color)}
     color.textContent=text.color;
@@ -87,10 +89,32 @@
     const response=await fetch(`${SUPABASE_URL}/functions/v1/karaoke-profile`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({action:'update_display_name',profileId:user.id,displayName,passwordHash})}),result=await response.json();
     if(!response.ok)throw new Error(result.error||'Display name could not be updated');return result.profile;
   }
-  window.renameProfile=async()=>{
-    const user=currentUser();if(!user||user.guest)return;const name=prompt('Display name',user.name);if(name===null||!name.trim())return;const displayName=name.trim();
-    try{if(user.remoteProfile){let passwordHash=null;if(user.passwordHash==='REMOTE'){const password=prompt('Current password');if(password===null)return;passwordHash=await hashPassword(password)}const profile=await updateSharedDisplayName(user,displayName,passwordHash);user.name=profile.name;user.username=profile.username}else user.name=displayName;saveState();renderProfile();toast('Display name updated')}catch(error){toast(error.message||'Display name could not be updated')}
-  };
+  let displayNameReturnFocus=null;
+  function displayNameModal(){return document.getElementById('displayNameModal')}
+  function showDisplayNameError(message){const error=document.getElementById('displayNameError');if(!error)return;error.textContent=message;error.hidden=!message}
+  function closeDisplayNameDialog(){
+    const modal=displayNameModal();if(!modal)return;modal.classList.remove('open');modal.setAttribute('aria-hidden','true');showDisplayNameError('');displayNameReturnFocus?.focus?.();displayNameReturnFocus=null;
+  }
+  function openDisplayNameDialog(){
+    const user=currentUser(),modal=displayNameModal(),name=document.getElementById('displayNameInput'),password=document.getElementById('displayNamePassword'),passwordField=document.getElementById('displayNamePasswordField');
+    if(!user||user.guest||!modal||!name||!password||!passwordField)return;
+    displayNameReturnFocus=document.activeElement;name.value=user.name||'';password.value='';passwordField.hidden=!(user.remoteProfile&&user.passwordHash==='REMOTE');showDisplayNameError('');modal.classList.add('open');modal.setAttribute('aria-hidden','false');requestAnimationFrame(()=>{name.focus();name.select()});
+  }
+  async function saveDisplayNameDialog(){
+    const user=currentUser(),name=document.getElementById('displayNameInput'),password=document.getElementById('displayNamePassword'),save=document.getElementById('displayNameSave');
+    if(!user||user.guest||!name||!password||!save)return;
+    const displayName=name.value.trim();
+    if(!displayName){showDisplayNameError('Enter a display name to continue.');name.focus();return}
+    const needsPassword=user.remoteProfile&&user.passwordHash==='REMOTE';
+    if(needsPassword&&!password.value){showDisplayNameError('Enter your current password to save this change.');password.focus();return}
+    save.disabled=true;save.textContent='Saving…';showDisplayNameError('');
+    try{
+      if(user.remoteProfile){const passwordHash=needsPassword?await hashPassword(password.value):null,profile=await updateSharedDisplayName(user,displayName,passwordHash);user.name=profile.name;user.username=profile.username}else user.name=displayName;
+      saveState();renderProfile();closeDisplayNameDialog();toast('Display name updated');
+    }catch(error){showDisplayNameError(error.message||'Display name could not be updated')}finally{save.disabled=false;save.textContent='Save name'}
+  }
+  window.renameProfile=openDisplayNameDialog;
+  window.closeDisplayNameDialog=closeDisplayNameDialog;
   function polishChatComposer(){
     const form=document.querySelector('.chatComposer'),input=document.getElementById('chatInput'),send=form?.querySelector('button[type="submit"]'),count=document.getElementById('chatTokenCount'),plus=form?.querySelector('.chatPlus');
     if(!form||!input||!send||!count||!plus||form.querySelector('.chatEntryMain'))return;
@@ -182,6 +206,21 @@
   window.loadAchievements=async()=>{await nativeLoadAchievements();localizeTimedAchievementShelf();polishAchievementShelf()};
 
   window.addEventListener('DOMContentLoaded',()=>{
+    if(!document.getElementById('displayNameModal')){
+      document.head.insertAdjacentHTML('beforeend',`<style>
+        .displayNameModal .modal{max-width:420px}
+        .displayNameModal .modalActions{justify-content:flex-end}
+        .displayNameModal .field{margin:16px 0 0}
+        .displayNameModal .field[hidden]{display:none}
+        .displayNameError{margin:12px 0 0;color:#efb0a5;font-size:12px;line-height:1.4}
+        .displayNameModal .btn[disabled]{cursor:wait;opacity:.7}
+      </style>`);
+      document.body.insertAdjacentHTML('beforeend',`<div id="displayNameModal" class="modalWrap displayNameModal" role="dialog" aria-modal="true" aria-labelledby="displayNameDialogTitle" aria-hidden="true"><div class="modal"><button type="button" class="modalClose" aria-label="Close edit display name" onclick="closeDisplayNameDialog()">×</button><div class="eyebrow">Singer profile</div><h3 id="displayNameDialogTitle">Edit display name</h3><p>Choose the name other singers see around the club.</p><form id="displayNameForm"><div class="field"><label for="displayNameInput">Display name</label><input id="displayNameInput" class="control" maxlength="40" autocomplete="nickname" required></div><div id="displayNamePasswordField" class="field" hidden><label for="displayNamePassword">Current password</label><input id="displayNamePassword" class="control" type="password" autocomplete="current-password"></div><p id="displayNameError" class="displayNameError" role="alert" hidden></p><div class="modalActions"><button type="button" class="btn ghost" onclick="closeDisplayNameDialog()">Cancel</button><button id="displayNameSave" type="submit" class="btn gold">Save name</button></div></form></div></div>`);
+      const modal=displayNameModal(),form=document.getElementById('displayNameForm');
+      modal.addEventListener('click',event=>{if(event.target===modal)closeDisplayNameDialog()});
+      form.addEventListener('submit',event=>{event.preventDefault();saveDisplayNameDialog()});
+      document.addEventListener('keydown',event=>{if(event.key==='Escape'&&modal.classList.contains('open'))closeDisplayNameDialog()});
+    }
     document.head.insertAdjacentHTML('beforeend',`<style>body:not(.menu-admin) #menuPickerButton{display:none!important}.brandrow{position:relative!important}.brandrow>.brand{min-height:43px!important}.brandrow>.brand>div:last-child{position:absolute!important;left:50%!important;top:50%!important;width:max-content;max-width:calc(100% - 96px);transform:translate(-50%,-50%)!important;text-align:center!important}.menuIntro .backBarShelf img{object-position:center 38%!important}.barMenu [data-admin-editable][contenteditable="true"]{outline:none!important}.profileActions{flex-wrap:wrap!important;overflow:visible!important}.profileActions .profileLanguage{width:auto!important;min-width:112px!important;padding:6px 24px 6px 8px!important}.historyRequest{padding:5px 7px!important;font-size:9px!important}.historyFavorite{display:grid!important;place-items:center;width:28px!important;height:28px!important;padding:0!important;font-size:17px!important}.historyFavorite.active{color:#f0c866!important}.accountSongRow>div:last-child{flex-wrap:wrap;justify-content:flex-end}.chatComposer{display:block!important}.chatEntryMain{width:100%}.chatEntryMain #chatInput{display:block;width:100%!important;min-height:44px!important;max-height:180px!important;box-sizing:border-box!important;resize:none!important;overflow-y:auto}.chatAttachments{display:flex;gap:5px;margin-bottom:6px}.chatEntryActions{display:grid;grid-template-columns:minmax(0,1fr) minmax(82px,.55fr) 58px;gap:7px;margin-top:7px}.chatEntryActions .btn{width:100%!important;min-width:0!important;height:42px!important;margin:0!important}.chatEntryActions .chatTokenCount{display:flex;align-items:center;padding:0 10px;box-sizing:border-box;border:1px solid rgba(201,162,87,.28);border-radius:3px;background:rgba(12,8,6,.72);color:#97866b;font:600 12px ui-sans-serif,system-ui;white-space:nowrap}.chatEntryActions .chatTokenCount.atMax{border-color:#d69b3c;color:#e5a83e}.chatEntryActions .chatPlus{font-size:24px!important;line-height:1!important;color:#e5c06d!important}@media(max-width:620px){.brand{width:100%!important;padding-left:0!important;padding-right:0!important}.chatEntryActions{grid-template-columns:minmax(0,1fr) minmax(76px,.52fr) 54px;gap:6px}.chatEntryActions .chatTokenCount{padding:0 8px;font-size:11px}.profileActions{width:100%;gap:5px!important}.profileActions .btn{font-size:9px!important;padding:6px 7px!important}.profileActions .profileLanguage{font-size:10px!important;max-width:125px}.historyRequest{font-size:8px!important;padding:4px 5px!important}.historyFavorite{width:25px!important;height:25px!important}}</style>`);
     document.head.insertAdjacentHTML('beforeend',`<style>.profileBar{position:relative!important;display:block!important;padding:12px 92px 12px 14px!important}.profileBarName{display:grid!important;gap:1px!important;font-family:ui-sans-serif,system-ui!important}.profileBarName strong{color:#e7c985;font:500 19px/1.2 Georgia,serif}.profileIdentityLabel{color:#9c8a6c;font-size:9px;letter-spacing:.12em;text-transform:uppercase}.profileAccountName{margin-top:3px;color:#b6a483;font-size:10px;letter-spacing:.025em}.profileActions{margin-top:10px!important}.profileLanguage{-webkit-appearance:none!important;appearance:none!important;padding-right:28px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23d8b76e' stroke-width='2'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 8px center!important;background-size:10px 7px!important}#profileLogoutButton{position:absolute!important;right:10px!important;top:10px!important;margin:0!important}.achievements.accountSection{padding:0!important}.achievements>summary{min-height:55px!important;box-sizing:border-box!important}.achievements>summary .achievementListButton{margin-left:auto!important;margin-right:8px!important}.achievement strong{font-size:13px!important;line-height:1.2!important}.achievementCollected{grid-column:2!important;display:block;margin-top:3px;color:#8f8067;font:500 9px/1.35 ui-sans-serif,system-ui;letter-spacing:.015em}@media(max-width:620px){.profileBar{padding:10px 78px 10px 10px!important}.profileBarName strong{font-size:17px!important}#profileLogoutButton{right:8px!important;top:8px!important}.achievements>summary{min-height:52px!important}.achievement strong{font-size:12px!important}.achievementCollected{font-size:8.5px!important}}</style>`);
     document.head.insertAdjacentHTML('beforeend','<style>.menuStage{margin-bottom:8px!important}</style>');

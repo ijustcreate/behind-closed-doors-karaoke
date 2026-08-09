@@ -1,0 +1,57 @@
+- generic [ref=e12]:
+  - banner [ref=e13]:
+    - generic [ref=e14]:
+      - generic:
+        - generic [ref=e15]: Key
+        - generic [ref=e16]:
+          - button "BCDKC — Behind Closed Doors Karaoke Club" [ref=e17] [cursor=pointer]:
+            - generic [ref=e18]: BCDKC
+            - generic: Behind Closed Doors Karaoke Club
+          - generic [ref=e19]: Behind Closed Doors Karaoke Club
+      - text: ⚿
+    - navigation [ref=e20]:
+      - button "Drinks" [ref=e21] [cursor=pointer]
+      - button "Songbook" [ref=e22] [cursor=pointer]
+  - main [ref=e23]:
+    - generic [ref=e1136]:
+      - generic [ref=e1137]:
+        - generic [ref=e1138]: The back booth
+        - heading "Karaoke Club Chat" [level=2] [ref=e1139]
+        - paragraph [ref=e1140]: Say hello to other Club Membersand share song recommendations.
+      - generic [ref=e1141]:
+        - generic [ref=e1142]:
+          - article [ref=e1143]:
+            - generic [ref=e1144]:
+              - strong [ref=e1145]: TestUser1
+              - time [ref=e1146]: Aug 8, 6:06 PM
+            - generic [ref=e1147]: hello
+          - article [ref=e1148]:
+            - generic [ref=e1149]:
+              - strong [ref=e1150]: felix
+              - time [ref=e1151]: Aug 8, 6:30 PM
+            - generic [ref=e1152]: Bhshdbdhd sickened did d did dnd dj dj
+            - generic [ref=e1154]:
+              - text: 😂
+              - generic [ref=e1155]: "1"
+          - article [ref=e1156]:
+            - generic [ref=e1157]:
+              - strong [ref=e1158]: Felix
+              - time [ref=e1159]: Aug 8, 6:58 PM · edited
+            - generic [ref=e1160]: Test edited
+          - article [ref=e1161]:
+            - generic [ref=e1162]:
+              - strong [ref=e1163]: Felix
+              - time [ref=e1164]: Aug 8, 6:59 PM
+            - generic [ref=e1165]: Hahaha
+            - button "Open attached picture 1" [ref=e1167] [cursor=pointer]:
+              - img "Attached picture 1" [ref=e1168]
+        - generic [ref=e1169]:
+          - generic [ref=e1170]:
+            - generic [ref=e1171]:
+              - generic: 0/1000
+              - textbox "Karaoke Chat message" [ref=e1172]:
+                - /placeholder: Say something to the room…
+            - generic [ref=e1173]:
+              - button "Send" [ref=e1174] [cursor=pointer]
+              - button "Add pictures" [ref=e1175] [cursor=pointer]: +
+          - paragraph [ref=e1176]: Sent messages and pictures stay in the chat room for one hour, then disappear.

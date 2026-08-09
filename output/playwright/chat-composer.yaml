@@ -1,0 +1,1057 @@
+- generic [active] [ref=e1]:
+  - region "Behind Closed Doors Karaoke entrance" [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: ⚿
+      - generic [ref=e5]: A speakeasy · a stage · your voice
+      - heading "Behind Closed Doors" [level=1] [ref=e6]
+      - generic [ref=e7]: Karaoke Club
+      - generic [ref=e9]: The night belongs to the bold
+      - button "Open the songbook" [ref=e11] [cursor=pointer]
+  - generic [ref=e12]:
+    - banner [ref=e13]:
+      - generic [ref=e14]:
+        - generic:
+          - generic [ref=e15]: Key
+          - generic [ref=e16]:
+            - button "BCDKC — Behind Closed Doors Karaoke Club" [ref=e17] [cursor=pointer]:
+              - generic [ref=e18]: BCDKC
+              - generic: Behind Closed Doors Karaoke Club
+            - generic [ref=e19]: Behind Closed Doors Karaoke Club
+        - text: ⚿
+      - navigation [ref=e20]:
+        - button "Drinks" [ref=e21] [cursor=pointer]
+        - button "Songbook" [ref=e22] [cursor=pointer]
+    - main [ref=e23]:
+      - generic [ref=e25]:
+        - generic [ref=e26]: Welcome to Karaoke Club
+        - heading "Find the song. Make it your own." [level=2] [ref=e27]: Find the song.Make it your own.
+        - paragraph [ref=e28]: Search by title, original artist, or genre. Sign in to save your favorites and build your own song list.
+        - button "Karaoke Chat" [ref=e29] [cursor=pointer]
+        - img "Lantern flame on"
+      - generic [ref=e30]:
+        - generic [ref=e31]:
+          - searchbox "Search title, artist, or genre..." [ref=e32]
+          - combobox [ref=e33]:
+            - 'option "Sort: Song title" [selected]'
+            - 'option "Sort: Artist"'
+          - combobox [ref=e34]:
+            - option "All genres" [selected]
+            - option "Karaoke Legends"
+            - option "Duets"
+            - option "Alternative / Indie"
+            - option "Classic Rock"
+            - option "Country"
+            - option "Electronic / Dance"
+            - option "Folk / Acoustic"
+            - option "Hip-Hop / Rap"
+            - option "Holiday"
+            - option "Jazz / Standards"
+            - option "Latin Pop"
+            - option "Metal / Hard Rock"
+            - option "Pop / Dance"
+            - option "Pop / Variety"
+            - option "Punk / Emo"
+            - option "R&B / Soul"
+            - option "Reggae / Ska"
+            - option "Soundtrack / Musical"
+        - generic [ref=e35]:
+          - navigation "Jump through songs alphabetically" [ref=e36]:
+            - 'button "Jump to #" [ref=e37] [cursor=pointer]': "#"
+            - button "Jump to A" [ref=e38] [cursor=pointer]: A
+            - button "Jump to B" [ref=e39] [cursor=pointer]: B
+            - button "Jump to C" [ref=e40] [cursor=pointer]: C
+            - button "Jump to D" [ref=e41] [cursor=pointer]: D
+            - button "Jump to E" [ref=e42] [cursor=pointer]: E
+            - button "Jump to F" [ref=e43] [cursor=pointer]: F
+            - button "Jump to G" [ref=e44] [cursor=pointer]: G
+            - button "Jump to H" [ref=e45] [cursor=pointer]: H
+            - button "Jump to I" [ref=e46] [cursor=pointer]: I
+            - button "Jump to J" [ref=e47] [cursor=pointer]: J
+            - button "Jump to K" [ref=e48] [cursor=pointer]: K
+            - button "Jump to L" [ref=e49] [cursor=pointer]: L
+            - button "Jump to M" [ref=e50] [cursor=pointer]: M
+            - button "Jump to N" [ref=e51] [cursor=pointer]: "N"
+            - button "Jump to O" [ref=e52] [cursor=pointer]: O
+            - button "Jump to P" [ref=e53] [cursor=pointer]: P
+            - button "Jump to Q" [ref=e54] [cursor=pointer]: Q
+            - button "Jump to R" [ref=e55] [cursor=pointer]: R
+            - button "Jump to S" [ref=e56] [cursor=pointer]: S
+            - button "Jump to T" [ref=e57] [cursor=pointer]: T
+            - button "Jump to U" [ref=e58] [cursor=pointer]: U
+            - button "Jump to V" [ref=e59] [cursor=pointer]: V
+            - button "Jump to W" [ref=e60] [cursor=pointer]: W
+            - button "Jump to X" [ref=e61] [cursor=pointer]: X
+            - button "Jump to Y" [ref=e62] [cursor=pointer]: "Y"
+            - button "Jump to Z" [disabled] [ref=e63]: Z
+          - generic [ref=e64]:
+            - generic [ref=e65]:
+              - generic [ref=e66]:
+                - heading "Songbook" [level=2] [ref=e67]
+                - paragraph [ref=e68]: 4,196 songs
+              - generic [ref=e69]: TJ number is the staff entry code.
+            - generic [ref=e70]:
+              - article [ref=e71]:
+                - generic [ref=e72]:
+                  - generic [ref=e73]: (I'M Caught Between) Goodbye And I Love You
+                  - generic [ref=e74]: The Carpenters
+                - generic [ref=e75]: Jazz / Standards
+                - generic [ref=e77]: "21717"
+                - generic [ref=e78]:
+                  - button "Request" [ref=e79] [cursor=pointer]
+                  - button "Add to favorites" [ref=e80] [cursor=pointer]: ★
+              - article [ref=e81]:
+                - generic [ref=e82]:
+                  - generic [ref=e83]: (There'S Gotta Be) More To Life
+                  - generic [ref=e84]: Stacie Orrico
+                - generic [ref=e85]: Pop / Variety
+                - generic [ref=e87]: "20837"
+                - generic [ref=e88]:
+                  - button "Request" [ref=e89] [cursor=pointer]
+                  - button "Add to favorites" [ref=e90] [cursor=pointer]: ★
+              - article [ref=e91]:
+                - generic [ref=e92]:
+                  - generic [ref=e93]: "#thatPOWER"
+                  - generic [ref=e94]: Will. I. Am
+                - generic [ref=e95]: Pop / Variety
+                - generic [ref=e97]: "22481"
+                - generic [ref=e98]:
+                  - button "Request" [ref=e99] [cursor=pointer]
+                  - button "Add to favorites" [ref=e100] [cursor=pointer]: ★
+              - article [ref=e101]:
+                - generic [ref=e102]:
+                  - generic [ref=e103]: "0"
+                  - generic [ref=e104]: Lifehouse
+                - generic [ref=e105]: Alternative / Indie
+                - generic [ref=e107]: "22063"
+                - generic [ref=e108]:
+                  - button "Request" [ref=e109] [cursor=pointer]
+                  - button "Add to favorites" [ref=e110] [cursor=pointer]: ★
+              - article [ref=e111]:
+                - generic [ref=e112]:
+                  - generic [ref=e113]: 1 Thing
+                  - generic [ref=e114]: Amerie
+                - generic [ref=e115]: Pop / Variety
+                - generic [ref=e117]: "21294"
+                - generic [ref=e118]:
+                  - button "Request" [ref=e119] [cursor=pointer]
+                  - button "Add to favorites" [ref=e120] [cursor=pointer]: ★
+              - article [ref=e121]:
+                - generic [ref=e122]:
+                  - generic [ref=e123]: 1-800-273-8255
+                  - generic [ref=e124]: Logic
+                - generic [ref=e125]: Pop / Variety
+                - generic [ref=e127]: "23080"
+                - generic [ref=e128]:
+                  - button "Request" [ref=e129] [cursor=pointer]
+                  - button "Add to favorites" [ref=e130] [cursor=pointer]: ★
+              - article [ref=e131]:
+                - generic [ref=e132]:
+                  - generic [ref=e133]: 1,2 Step
+                  - generic [ref=e134]: Ciara
+                - generic [ref=e135]: R&B / Soul
+                - generic [ref=e137]: "21229"
+                - generic [ref=e138]:
+                  - button "Request" [ref=e139] [cursor=pointer]
+                  - button "Add to favorites" [ref=e140] [cursor=pointer]: ★
+              - article [ref=e141]:
+                - generic [ref=e142]:
+                  - generic [ref=e143]: 100 Years
+                  - generic [ref=e144]: Five For Fighting
+                - generic [ref=e145]: Pop / Variety
+                - generic [ref=e147]: "22490"
+                - generic [ref=e148]:
+                  - button "Request" [ref=e149] [cursor=pointer]
+                  - button "Add to favorites" [ref=e150] [cursor=pointer]: ★
+              - article [ref=e151]:
+                - generic [ref=e152]:
+                  - generic [ref=e153]: "13"
+                  - generic [ref=e154]: Lany
+                - generic [ref=e155]: Pop / Variety
+                - generic [ref=e157]: "23225"
+                - generic [ref=e158]:
+                  - button "Request" [ref=e159] [cursor=pointer]
+                  - button "Add to favorites" [ref=e160] [cursor=pointer]: ★
+              - article [ref=e161]:
+                - generic [ref=e162]:
+                  - generic [ref=e163]: 18 And Life
+                  - generic [ref=e164]: Skid Row
+                - generic [ref=e165]: Metal / Hard Rock
+                - generic [ref=e167]: "7887"
+                - generic [ref=e168]:
+                  - button "Request" [ref=e169] [cursor=pointer]
+                  - button "Add to favorites" [ref=e170] [cursor=pointer]: ★
+              - article [ref=e171]:
+                - generic [ref=e172]:
+                  - generic [ref=e173]: 18 Years
+                  - generic [ref=e174]: Gamma Ray
+                - generic [ref=e175]: Metal / Hard Rock
+                - generic [ref=e177]: "20136"
+                - generic [ref=e178]:
+                  - button "Request" [ref=e179] [cursor=pointer]
+                  - button "Add to favorites" [ref=e180] [cursor=pointer]: ★
+              - article [ref=e181]:
+                - generic [ref=e182]:
+                  - generic [ref=e183]: "1979"
+                  - generic [ref=e184]: Smashing Pumpkins
+                - generic [ref=e185]: Alternative / Indie
+                - generic [ref=e187]: "20094"
+                - generic [ref=e188]:
+                  - button "Request" [ref=e189] [cursor=pointer]
+                  - button "Add to favorites" [ref=e190] [cursor=pointer]: ★
+              - article [ref=e191]:
+                - generic [ref=e192]:
+                  - generic [ref=e193]: 2 Become 1
+                  - generic [ref=e194]: Spice Girls
+                - generic [ref=e195]: Pop / Variety
+                - generic [ref=e197]: "7774"
+                - generic [ref=e198]:
+                  - button "Request" [ref=e199] [cursor=pointer]
+                  - button "Add to favorites" [ref=e200] [cursor=pointer]: ★
+              - article [ref=e201]:
+                - generic [ref=e202]:
+                  - generic [ref=e203]: 2 Reasons
+                  - generic [ref=e204]: Trey Songz
+                - generic [ref=e205]: R&B / Soul
+                - generic [ref=e207]: "22616"
+                - generic [ref=e208]:
+                  - button "Request" [ref=e209] [cursor=pointer]
+                  - button "Add to favorites" [ref=e210] [cursor=pointer]: ★
+              - article [ref=e211]:
+                - generic [ref=e212]:
+                  - generic [ref=e213]: 2+2=5
+                  - generic [ref=e214]: Radiohead
+                - generic [ref=e215]: Metal / Hard Rock
+                - generic [ref=e217]: "20873"
+                - generic [ref=e218]:
+                  - button "Request" [ref=e219] [cursor=pointer]
+                  - button "Add to favorites" [ref=e220] [cursor=pointer]: ★
+              - article [ref=e221]:
+                - generic [ref=e222]:
+                  - generic [ref=e223]: "2002"
+                  - generic [ref=e224]: Anne-Marie
+                - generic [ref=e225]: Pop / Variety
+                - generic [ref=e227]: "23190"
+                - generic [ref=e228]:
+                  - button "Request" [ref=e229] [cursor=pointer]
+                  - button "Add to favorites" [ref=e230] [cursor=pointer]: ★
+              - article [ref=e231]:
+                - generic [ref=e232]:
+                  - generic [ref=e233]: 20Th Century Boy
+                  - generic [ref=e234]: T. Rex
+                - generic [ref=e235]: Classic Rock
+                - generic [ref=e237]: "21517"
+                - generic [ref=e238]:
+                  - button "Request" [ref=e239] [cursor=pointer]
+                  - button "Add to favorites" [ref=e240] [cursor=pointer]: ★
+              - article [ref=e241]:
+                - generic [ref=e242]:
+                  - generic [ref=e243]: 21 Guns
+                  - generic [ref=e244]: Green Day
+                - generic [ref=e245]: Punk / Emo
+                - generic [ref=e247]: "22055"
+                - generic [ref=e248]:
+                  - button "Request" [ref=e249] [cursor=pointer]
+                  - button "Add to favorites" [ref=e250] [cursor=pointer]: ★
+              - article [ref=e251]:
+                - generic [ref=e252]:
+                  - generic [ref=e253]: "22"
+                  - generic [ref=e254]: Taylor Swift
+                - generic [ref=e255]: Pop / Variety
+                - generic [ref=e257]: "22487"
+                - generic [ref=e258]:
+                  - button "Request" [ref=e259] [cursor=pointer]
+                  - button "Add to favorites" [ref=e260] [cursor=pointer]: ★
+              - article [ref=e261]:
+                - generic [ref=e262]:
+                  - generic [ref=e263]: 24K Magic
+                  - generic [ref=e264]: Bruno Mars
+                - generic [ref=e265]: Pop / Variety
+                - generic [ref=e267]: "22941"
+                - generic [ref=e268]:
+                  - button "Request" [ref=e269] [cursor=pointer]
+                  - button "Add to favorites" [ref=e270] [cursor=pointer]: ★
+              - article [ref=e271]:
+                - generic [ref=e272]:
+                  - generic [ref=e273]: 25 Minutes
+                  - generic [ref=e274]: Michael Learns To Rock
+                - generic [ref=e275]: Pop / Variety
+                - generic [ref=e277]: "7815"
+                - generic [ref=e278]:
+                  - button "Request" [ref=e279] [cursor=pointer]
+                  - button "Add to favorites" [ref=e280] [cursor=pointer]: ★
+              - article [ref=e281]:
+                - generic [ref=e282]:
+                  - generic [ref=e283]: 25 Or 6 To 4
+                  - generic [ref=e284]: Chicago
+                - generic [ref=e285]: Classic Rock
+                - generic [ref=e287]: "20628"
+                - generic [ref=e288]:
+                  - button "Request" [ref=e289] [cursor=pointer]
+                  - button "Add to favorites" [ref=e290] [cursor=pointer]: ★
+              - article [ref=e291]:
+                - generic [ref=e292]:
+                  - generic [ref=e293]: 2U
+                  - generic [ref=e294]: David Guetta
+                - generic [ref=e295]: Electronic / Dance
+                - generic [ref=e297]: "23065"
+                - generic [ref=e298]:
+                  - button "Request" [ref=e299] [cursor=pointer]
+                  - button "Add to favorites" [ref=e300] [cursor=pointer]: ★
+              - article [ref=e301]:
+                - generic [ref=e302]:
+                  - generic [ref=e303]: "3"
+                  - generic [ref=e304]: Britney Spears
+                - generic [ref=e305]: Pop / Variety
+                - generic [ref=e307]: "22019"
+                - generic [ref=e308]:
+                  - button "Request" [ref=e309] [cursor=pointer]
+                  - button "Add to favorites" [ref=e310] [cursor=pointer]: ★
+              - article [ref=e311]:
+                - generic [ref=e312]:
+                  - generic [ref=e313]: 3 Things
+                  - generic [ref=e314]: Jason Mraz
+                - generic [ref=e315]: Folk / Acoustic
+                - generic [ref=e317]: "22635"
+                - generic [ref=e318]:
+                  - button "Request" [ref=e319] [cursor=pointer]
+                  - button "Add to favorites" [ref=e320] [cursor=pointer]: ★
+              - article [ref=e321]:
+                - generic [ref=e322]:
+                  - generic [ref=e323]: 30 Minutes
+                  - generic [ref=e324]: t.A.T.u
+                - generic [ref=e325]: Pop / Variety
+                - generic [ref=e327]: "20951"
+                - generic [ref=e328]:
+                  - button "Request" [ref=e329] [cursor=pointer]
+                  - button "Add to favorites" [ref=e330] [cursor=pointer]: ★
+              - article [ref=e331]:
+                - generic [ref=e332]:
+                  - generic [ref=e333]: 3Am
+                  - generic [ref=e334]: Honne
+                - generic [ref=e335]: Pop / Variety
+                - generic [ref=e337]: "22969"
+                - generic [ref=e338]:
+                  - button "Request" [ref=e339] [cursor=pointer]
+                  - button "Add to favorites" [ref=e340] [cursor=pointer]: ★
+              - article [ref=e341]:
+                - generic [ref=e342]:
+                  - generic [ref=e343]: 4 Minutes
+                  - generic [ref=e344]: Madonna
+                - generic [ref=e345]: Pop / Variety
+                - generic [ref=e347]: "21841"
+                - generic [ref=e348]:
+                  - button "Request" [ref=e349] [cursor=pointer]
+                  - button "Add to favorites" [ref=e350] [cursor=pointer]: ★
+              - article [ref=e351]:
+                - generic [ref=e352]:
+                  - generic [ref=e353]: 4 Seasons Of Loneliness
+                  - generic [ref=e354]: Boyz Ii Men
+                - generic [ref=e355]: R&B / Soul
+                - generic [ref=e357]: "7756"
+                - generic [ref=e358]:
+                  - button "Request" [ref=e359] [cursor=pointer]
+                  - button "Add to favorites" [ref=e360] [cursor=pointer]: ★
+              - article [ref=e361]:
+                - generic [ref=e362]:
+                  - generic [ref=e363]: 5 O'Clock
+                  - generic [ref=e364]: T-Pain
+                - generic [ref=e365]: Pop / Variety
+                - generic [ref=e367]: "22286"
+                - generic [ref=e368]:
+                  - button "Request" [ref=e369] [cursor=pointer]
+                  - button "Add to favorites" [ref=e370] [cursor=pointer]: ★
+              - article [ref=e371]:
+                - generic [ref=e372]:
+                  - generic [ref=e373]: 50 Ways To Say Goodbye
+                  - generic [ref=e374]: Train
+                - generic [ref=e375]: Pop / Variety
+                - generic [ref=e377]: "22407"
+                - generic [ref=e378]:
+                  - button "Request" [ref=e379] [cursor=pointer]
+                  - button "Add to favorites" [ref=e380] [cursor=pointer]: ★
+              - article [ref=e381]:
+                - generic [ref=e382]:
+                  - generic [ref=e383]: 500 Miles
+                  - generic [ref=e384]: Peter Paul & Mary
+                - generic [ref=e385]: Folk / Acoustic
+                - generic [ref=e387]: "7499"
+                - generic [ref=e388]:
+                  - button "Request" [ref=e389] [cursor=pointer]
+                  - button "Add to favorites" [ref=e390] [cursor=pointer]: ★
+              - article [ref=e391]:
+                - generic [ref=e392]:
+                  - generic [ref=e393]: 6-8-12
+                  - generic [ref=e394]: BRIAN McKNIGHT
+                - generic [ref=e395]: R&B / Soul
+                - generic [ref=e397]: "20986"
+                - generic [ref=e398]:
+                  - button "Request" [ref=e399] [cursor=pointer]
+                  - button "Add to favorites" [ref=e400] [cursor=pointer]: ★
+              - article [ref=e401]:
+                - generic [ref=e402]:
+                  - generic [ref=e403]: 7 Days
+                  - generic [ref=e404]: Craig David
+                - generic [ref=e405]: Pop / Variety
+                - generic [ref=e407]: "20238"
+                - generic [ref=e408]:
+                  - button "Request" [ref=e409] [cursor=pointer]
+                  - button "Add to favorites" [ref=e410] [cursor=pointer]: ★
+              - article [ref=e411]:
+                - generic [ref=e412]:
+                  - generic [ref=e413]: 7 Rings
+                  - generic [ref=e414]: Ariana Grande
+                - generic [ref=e415]: Pop / Variety
+                - generic [ref=e417]: "23311"
+                - generic [ref=e418]:
+                  - button "Request" [ref=e419] [cursor=pointer]
+                  - button "Add to favorites" [ref=e420] [cursor=pointer]: ★
+              - article [ref=e421]:
+                - generic [ref=e422]:
+                  - generic [ref=e423]: 7 Words
+                  - generic [ref=e424]: Deftones
+                - generic [ref=e425]: Pop / Variety
+                - generic [ref=e427]: "21198"
+                - generic [ref=e428]:
+                  - button "Request" [ref=e429] [cursor=pointer]
+                  - button "Add to favorites" [ref=e430] [cursor=pointer]: ★
+              - article [ref=e431]:
+                - generic [ref=e432]:
+                  - generic [ref=e433]: 7 Years
+                  - generic [ref=e434]: Lukas Graham
+                - generic [ref=e435]: Pop / Variety
+                - generic [ref=e437]: "22884"
+                - generic [ref=e438]:
+                  - button "Request" [ref=e439] [cursor=pointer]
+                  - button "Add to favorites" [ref=e440] [cursor=pointer]: ★
+              - article [ref=e441]:
+                - generic [ref=e442]:
+                  - generic [ref=e443]: 8 Letters
+                  - generic [ref=e444]: Why Don'T We
+                - generic [ref=e445]: Pop / Variety
+                - generic [ref=e447]: "23259"
+                - generic [ref=e448]:
+                  - button "Request" [ref=e449] [cursor=pointer]
+                  - button "Add to favorites" [ref=e450] [cursor=pointer]: ★
+              - article [ref=e451]:
+                - generic [ref=e452]:
+                  - generic [ref=e453]: 9 Crimes
+                  - generic [ref=e454]: Damien Rice
+                - generic [ref=e455]: Folk / Acoustic
+                - generic [ref=e457]: "22408"
+                - generic [ref=e458]:
+                  - button "Request" [ref=e459] [cursor=pointer]
+                  - button "Add to favorites" [ref=e460] [cursor=pointer]: ★
+              - article [ref=e461]:
+                - generic [ref=e462]:
+                  - generic [ref=e463]: 9 To 5
+                  - generic [ref=e464]: Dolly Parton
+                - generic [ref=e465]: Country
+                - generic [ref=e467]: "20557"
+                - generic [ref=e468]:
+                  - button "Request" [ref=e469] [cursor=pointer]
+                  - button "Add to favorites" [ref=e470] [cursor=pointer]: ★
+              - article [ref=e471]:
+                - generic [ref=e472]:
+                  - generic [ref=e473]: "911"
+                  - generic [ref=e474]: Wyclef Jean
+                - generic [ref=e475]: Hip-Hop / Rap
+                - generic [ref=e477]: "21286"
+                - generic [ref=e478]:
+                  - button "Request" [ref=e479] [cursor=pointer]
+                  - button "Add to favorites" [ref=e480] [cursor=pointer]: ★
+              - article [ref=e481]:
+                - generic [ref=e482]:
+                  - generic [ref=e483]: 93 Million Miles
+                  - generic [ref=e484]: Jason Mraz
+                - generic [ref=e485]: Folk / Acoustic
+                - generic [ref=e487]: "22716"
+                - generic [ref=e488]:
+                  - button "Request" [ref=e489] [cursor=pointer]
+                  - button "Add to favorites" [ref=e490] [cursor=pointer]: ★
+              - article [ref=e491]:
+                - generic [ref=e492]:
+                  - generic [ref=e493]: "99"
+                  - generic [ref=e494]: Toto
+                - generic [ref=e495]: Classic Rock
+                - generic [ref=e497]: "21498"
+                - generic [ref=e498]:
+                  - button "Request" [ref=e499] [cursor=pointer]
+                  - button "Add to favorites" [ref=e500] [cursor=pointer]: ★
+              - article [ref=e501]:
+                - generic [ref=e502]:
+                  - generic [ref=e503]: 99 Red Balloons
+                  - generic [ref=e504]: Goldfinger
+                - generic [ref=e505]: Pop / Variety
+                - generic [ref=e507]: "21176"
+                - generic [ref=e508]:
+                  - button "Request" [ref=e509] [cursor=pointer]
+                  - button "Add to favorites" [ref=e510] [cursor=pointer]: ★
+              - article [ref=e511]:
+                - generic [ref=e512]:
+                  - generic [ref=e513]: A Day In The Life
+                  - generic [ref=e514]: Beatles
+                - generic [ref=e515]: Classic Rock
+                - generic [ref=e517]: "7958"
+                - generic [ref=e518]:
+                  - button "Request" [ref=e519] [cursor=pointer]
+                  - button "Add to favorites" [ref=e520] [cursor=pointer]: ★
+              - article [ref=e521]:
+                - generic [ref=e522]:
+                  - generic [ref=e523]: A Foggy Day
+                  - generic [ref=e524]: Michael Buble
+                - generic [ref=e525]: Jazz / Standards
+                - generic [ref=e527]: "21668"
+                - generic [ref=e528]:
+                  - button "Request" [ref=e529] [cursor=pointer]
+                  - button "Add to favorites" [ref=e530] [cursor=pointer]: ★
+              - article [ref=e531]:
+                - generic [ref=e532]:
+                  - generic [ref=e533]: A Hard Day'S Night
+                  - generic [ref=e534]: Beatles
+                - generic [ref=e535]: Classic Rock
+                - generic [ref=e537]: "20629"
+                - generic [ref=e538]:
+                  - button "Request" [ref=e539] [cursor=pointer]
+                  - button "Add to favorites" [ref=e540] [cursor=pointer]: ★
+              - article [ref=e541]:
+                - generic [ref=e542]:
+                  - generic [ref=e543]: A Hazy Shade Of Winter
+                  - generic [ref=e544]: Simon & Garfunkel
+                - generic [ref=e545]: Folk / Acoustic
+                - generic [ref=e547]: "20630"
+                - generic [ref=e548]:
+                  - button "Request" [ref=e549] [cursor=pointer]
+                  - button "Add to favorites" [ref=e550] [cursor=pointer]: ★
+              - article [ref=e551]:
+                - generic [ref=e552]:
+                  - generic [ref=e553]: A Higher Place
+                  - generic [ref=e554]: Adam Levine
+                - generic [ref=e555]: Pop / Variety
+                - generic [ref=e557]: "22990"
+                - generic [ref=e558]:
+                  - button "Request" [ref=e559] [cursor=pointer]
+                  - button "Add to favorites" [ref=e560] [cursor=pointer]: ★
+              - article [ref=e561]:
+                - generic [ref=e562]:
+                  - generic [ref=e563]: A House Is Not A Home
+                  - generic [ref=e564]: Luther Vandross
+                - generic [ref=e565]: R&B / Soul
+                - generic [ref=e567]: "21454"
+                - generic [ref=e568]:
+                  - button "Request" [ref=e569] [cursor=pointer]
+                  - button "Add to favorites" [ref=e570] [cursor=pointer]: ★
+              - article [ref=e571]:
+                - generic [ref=e572]:
+                  - generic [ref=e573]: A Little Peace
+                  - generic [ref=e574]: Nicole
+                - generic [ref=e575]: Pop / Variety
+                - generic [ref=e577]: "21490"
+                - generic [ref=e578]:
+                  - button "Request" [ref=e579] [cursor=pointer]
+                  - button "Add to favorites" [ref=e580] [cursor=pointer]: ★
+              - article [ref=e581]:
+                - generic [ref=e582]:
+                  - generic [ref=e583]: A Little Time
+                  - generic [ref=e584]: Helloween
+                - generic [ref=e585]: Metal / Hard Rock
+                - generic [ref=e587]: "20145"
+                - generic [ref=e588]:
+                  - button "Request" [ref=e589] [cursor=pointer]
+                  - button "Add to favorites" [ref=e590] [cursor=pointer]: ★
+              - article [ref=e591]:
+                - generic [ref=e592]:
+                  - generic [ref=e593]: A Love Until The End Of Time
+                  - generic [ref=e594]: M. Mcgovern & P. Domingo
+                - generic [ref=e595]: Pop / Variety
+                - generic [ref=e597]: "20500"
+                - generic [ref=e598]:
+                  - button "Request" [ref=e599] [cursor=pointer]
+                  - button "Add to favorites" [ref=e600] [cursor=pointer]: ★
+              - article [ref=e601]:
+                - generic [ref=e602]:
+                  - generic [ref=e603]: A Lover'S Concerto
+                  - generic [ref=e604]: Sarah Vaughan
+                - generic [ref=e605]: Jazz / Standards
+                - generic [ref=e607]: "7721"
+                - generic [ref=e608]:
+                  - button "Request" [ref=e609] [cursor=pointer]
+                  - button "Add to favorites" [ref=e610] [cursor=pointer]: ★
+              - article [ref=e611]:
+                - generic [ref=e612]:
+                  - generic [ref=e613]: A Moment Like This
+                  - generic [ref=e614]: Kelly Clarkson
+                - generic [ref=e615]: Pop / Variety
+                - generic [ref=e617]: "20361"
+                - generic [ref=e618]:
+                  - button "Request" [ref=e619] [cursor=pointer]
+                  - button "Add to favorites" [ref=e620] [cursor=pointer]: ★
+              - article [ref=e621]:
+                - generic [ref=e622]:
+                  - generic [ref=e623]: A Natural Woman
+                  - generic [ref=e624]: Carol King
+                - generic [ref=e625]: Pop / Variety
+                - generic [ref=e627]: "7570"
+                - generic [ref=e628]:
+                  - button "Request" [ref=e629] [cursor=pointer]
+                  - button "Add to favorites" [ref=e630] [cursor=pointer]: ★
+              - article [ref=e631]:
+                - generic [ref=e632]:
+                  - generic [ref=e633]: A New Day Has Come
+                  - generic [ref=e634]: Celine Dion
+                - generic [ref=e635]: Metal / Hard Rock
+                - generic [ref=e637]: "20345"
+                - generic [ref=e638]:
+                  - button "Request" [ref=e639] [cursor=pointer]
+                  - button "Add to favorites" [ref=e640] [cursor=pointer]: ★
+              - article [ref=e641]:
+                - generic [ref=e642]:
+                  - generic [ref=e643]: A Place In The Sun
+                  - generic [ref=e644]: Engelbert Humperdinck
+                - generic [ref=e645]: Jazz / Standards
+                - generic [ref=e647]: "7368"
+                - generic [ref=e648]:
+                  - button "Request" [ref=e649] [cursor=pointer]
+                  - button "Add to favorites" [ref=e650] [cursor=pointer]: ★
+              - article [ref=e651]:
+                - generic [ref=e652]:
+                  - generic [ref=e653]: A Shoulder To Cry On
+                  - generic [ref=e654]: Tommy Page
+                - generic [ref=e655]: Pop / Variety
+                - generic [ref=e657]: "7225"
+                - generic [ref=e658]:
+                  - button "Request" [ref=e659] [cursor=pointer]
+                  - button "Add to favorites" [ref=e660] [cursor=pointer]: ★
+              - article [ref=e661]:
+                - generic [ref=e662]:
+                  - generic [ref=e663]: A Sky Full Of Stars
+                  - generic [ref=e664]: Coldplay
+                - generic [ref=e665]: Alternative / Indie
+                - generic [ref=e667]: "22944"
+                - generic [ref=e668]:
+                  - button "Request" [ref=e669] [cursor=pointer]
+                  - button "Add to favorites" [ref=e670] [cursor=pointer]: ★
+              - article [ref=e671]:
+                - generic [ref=e672]:
+                  - generic [ref=e673]: A Song For Mama
+                  - generic [ref=e674]: Boyz Ii Men
+                - generic [ref=e675]: R&B / Soul
+                - generic [ref=e677]: "20833"
+                - generic [ref=e678]:
+                  - button "Request" [ref=e679] [cursor=pointer]
+                  - button "Add to favorites" [ref=e680] [cursor=pointer]: ★
+              - article [ref=e681]:
+                - generic [ref=e682]:
+                  - generic [ref=e683]: A Step You Can'T Take Back
+                  - generic [ref=e684]: Keira Knightley
+                - generic [ref=e685]: Pop / Variety
+                - generic [ref=e687]: "23400"
+                - generic [ref=e688]:
+                  - button "Request" [ref=e689] [cursor=pointer]
+                  - button "Add to favorites" [ref=e690] [cursor=pointer]: ★
+              - article [ref=e691]:
+                - generic [ref=e692]:
+                  - generic [ref=e693]: A Tale That Wasn'T Right
+                  - generic [ref=e694]: Helloween
+                - generic [ref=e695]: Metal / Hard Rock
+                - generic [ref=e697]: "7744"
+                - generic [ref=e698]:
+                  - button "Request" [ref=e699] [cursor=pointer]
+                  - button "Add to favorites" [ref=e700] [cursor=pointer]: ★
+              - article [ref=e701]:
+                - generic [ref=e702]:
+                  - generic [ref=e703]: A Thousand Miles
+                  - generic [ref=e704]: Vanessa Carlton
+                - generic [ref=e705]:
+                  - generic [ref=e706]: Pop / Variety
+                  - generic [ref=e707]: Karaoke Legend
+                - generic [ref=e708]: "20391"
+                - generic [ref=e709]:
+                  - button "Request" [ref=e710] [cursor=pointer]
+                  - button "Add to favorites" [ref=e711] [cursor=pointer]: ★
+              - article [ref=e712]:
+                - generic [ref=e713]:
+                  - generic [ref=e714]: A Thousand Years
+                  - generic [ref=e715]: Christina Perri
+                - generic [ref=e716]: Pop / Variety
+                - generic [ref=e718]: "22429"
+                - generic [ref=e719]:
+                  - button "Request" [ref=e720] [cursor=pointer]
+                  - button "Add to favorites" [ref=e721] [cursor=pointer]: ★
+              - article [ref=e722]:
+                - generic [ref=e723]:
+                  - generic [ref=e724]: A Time For Us
+                  - generic [ref=e725]: Andy Williams
+                - generic [ref=e726]: Jazz / Standards
+                - generic [ref=e728]: "7160"
+                - generic [ref=e729]:
+                  - button "Request" [ref=e730] [cursor=pointer]
+                  - button "Add to favorites" [ref=e731] [cursor=pointer]: ★
+              - article [ref=e732]:
+                - generic [ref=e733]:
+                  - generic [ref=e734]: A Touch Of Evil
+                  - generic [ref=e735]: Judas Priest
+                - generic [ref=e736]: Metal / Hard Rock
+                - generic [ref=e738]: "21015"
+                - generic [ref=e739]:
+                  - button "Request" [ref=e740] [cursor=pointer]
+                  - button "Add to favorites" [ref=e741] [cursor=pointer]: ★
+              - article [ref=e742]:
+                - generic [ref=e743]:
+                  - generic [ref=e744]: A Whiter Shade Of Pale
+                  - generic [ref=e745]: Procol Harum
+                - generic [ref=e746]: Pop / Variety
+                - generic [ref=e748]: "7300"
+                - generic [ref=e749]:
+                  - button "Request" [ref=e750] [cursor=pointer]
+                  - button "Add to favorites" [ref=e751] [cursor=pointer]: ★
+              - article [ref=e752]:
+                - generic [ref=e753]:
+                  - generic [ref=e754]: A Whole New World
+                  - generic [ref=e755]: Regina And Peabo
+                - generic [ref=e756]: Pop / Variety
+                - generic [ref=e758]: "7719"
+                - generic [ref=e759]:
+                  - button "Request" [ref=e760] [cursor=pointer]
+                  - button "Add to favorites" [ref=e761] [cursor=pointer]: ★
+              - article [ref=e762]:
+                - generic [ref=e763]:
+                  - generic [ref=e764]: A Whole New World (Aladdin Ost)
+                  - generic [ref=e765]: Zayn & Zhavia Ward
+                - generic [ref=e766]: Soundtrack / Musical
+                - generic [ref=e768]: "23362"
+                - generic [ref=e769]:
+                  - button "Request" [ref=e770] [cursor=pointer]
+                  - button "Add to favorites" [ref=e771] [cursor=pointer]: ★
+              - article [ref=e772]:
+                - generic [ref=e773]:
+                  - generic [ref=e774]: A Wolf At The Door
+                  - generic [ref=e775]: Radiohead
+                - generic [ref=e776]: Metal / Hard Rock
+                - generic [ref=e778]: "20972"
+                - generic [ref=e779]:
+                  - button "Request" [ref=e780] [cursor=pointer]
+                  - button "Add to favorites" [ref=e781] [cursor=pointer]: ★
+              - article [ref=e782]:
+                - generic [ref=e783]:
+                  - generic [ref=e784]: A Woman'S Worth
+                  - generic [ref=e785]: Alicia Keys
+                - generic [ref=e786]: R&B / Soul
+                - generic [ref=e788]: "20189"
+                - generic [ref=e789]:
+                  - button "Request" [ref=e790] [cursor=pointer]
+                  - button "Add to favorites" [ref=e791] [cursor=pointer]: ★
+              - article [ref=e792]:
+                - generic [ref=e793]:
+                  - generic [ref=e794]: A World Without Love
+                  - generic [ref=e795]: Peter & Gordon
+                - generic [ref=e796]: Pop / Variety
+                - generic [ref=e798]: "20727"
+                - generic [ref=e799]:
+                  - button "Request" [ref=e800] [cursor=pointer]
+                  - button "Add to favorites" [ref=e801] [cursor=pointer]: ★
+              - article [ref=e802]:
+                - generic [ref=e803]:
+                  - generic [ref=e804]: A.D.I.D.A.S
+                  - generic [ref=e805]: Korn
+                - generic [ref=e806]: Metal / Hard Rock
+                - generic [ref=e808]: "7732"
+                - generic [ref=e809]:
+                  - button "Request" [ref=e810] [cursor=pointer]
+                  - button "Add to favorites" [ref=e811] [cursor=pointer]: ★
+              - article [ref=e812]:
+                - generic [ref=e813]:
+                  - generic [ref=e814]: About A Girl
+                  - generic [ref=e815]: Nirvana
+                - generic [ref=e816]: Alternative / Indie
+                - generic [ref=e818]: "20753"
+                - generic [ref=e819]:
+                  - button "Request" [ref=e820] [cursor=pointer]
+                  - button "Add to favorites" [ref=e821] [cursor=pointer]: ★
+              - article [ref=e822]:
+                - generic [ref=e823]:
+                  - generic [ref=e824]: Abracadabra
+                  - generic [ref=e825]: Sugar Ray
+                - generic [ref=e826]: Pop / Variety
+                - generic [ref=e828]: "20770"
+                - generic [ref=e829]:
+                  - button "Request" [ref=e830] [cursor=pointer]
+                  - button "Add to favorites" [ref=e831] [cursor=pointer]: ★
+              - article [ref=e832]:
+                - generic [ref=e833]:
+                  - generic [ref=e834]: Accidentally In Love
+                  - generic [ref=e835]: Counting Crows
+                - generic [ref=e836]: Pop / Variety
+                - generic [ref=e838]: "21071"
+                - generic [ref=e839]:
+                  - button "Request" [ref=e840] [cursor=pointer]
+                  - button "Add to favorites" [ref=e841] [cursor=pointer]: ★
+              - article [ref=e842]:
+                - generic [ref=e843]:
+                  - generic [ref=e844]: Ace Of Sorrow
+                  - generic [ref=e845]: America Traditional
+                - generic [ref=e846]: Classic Rock
+                - generic [ref=e848]: "7882"
+                - generic [ref=e849]:
+                  - button "Request" [ref=e850] [cursor=pointer]
+                  - button "Add to favorites" [ref=e851] [cursor=pointer]: ★
+              - article [ref=e852]:
+                - generic [ref=e853]:
+                  - generic [ref=e854]: Aces High
+                  - generic [ref=e855]: Iron Maiden
+                - generic [ref=e856]: Metal / Hard Rock
+                - generic [ref=e858]: "20754"
+                - generic [ref=e859]:
+                  - button "Request" [ref=e860] [cursor=pointer]
+                  - button "Add to favorites" [ref=e861] [cursor=pointer]: ★
+              - article [ref=e862]:
+                - generic [ref=e863]:
+                  - generic [ref=e864]: Across The Nation
+                  - generic [ref=e865]: The Union Underground
+                - generic [ref=e866]: Pop / Variety
+                - generic [ref=e868]: "20671"
+                - generic [ref=e869]:
+                  - button "Request" [ref=e870] [cursor=pointer]
+                  - button "Add to favorites" [ref=e871] [cursor=pointer]: ★
+              - article [ref=e872]:
+                - generic [ref=e873]:
+                  - generic [ref=e874]: Across The Universe
+                  - generic [ref=e875]: Fiona Apple
+                - generic [ref=e876]: Pop / Variety
+                - generic [ref=e878]: "20273"
+                - generic [ref=e879]:
+                  - button "Request" [ref=e880] [cursor=pointer]
+                  - button "Add to favorites" [ref=e881] [cursor=pointer]: ★
+              - article [ref=e882]:
+                - generic [ref=e883]:
+                  - generic [ref=e884]: Act Naturally
+                  - generic [ref=e885]: Beatles
+                - generic [ref=e886]: Classic Rock
+                - generic [ref=e888]: "20631"
+                - generic [ref=e889]:
+                  - button "Request" [ref=e890] [cursor=pointer]
+                  - button "Add to favorites" [ref=e891] [cursor=pointer]: ★
+              - article [ref=e892]:
+                - generic [ref=e893]:
+                  - generic [ref=e894]: Adagio
+                  - generic [ref=e895]: New Trolls
+                - generic [ref=e896]: Pop / Variety
+                - generic [ref=e898]: "20270"
+                - generic [ref=e899]:
+                  - button "Request" [ref=e900] [cursor=pointer]
+                  - button "Add to favorites" [ref=e901] [cursor=pointer]: ★
+              - article [ref=e902]:
+                - generic [ref=e903]:
+                  - generic [ref=e904]: Addicted
+                  - generic [ref=e905]: Simple Plan
+                - generic [ref=e906]: Punk / Emo
+                - generic [ref=e908]: "20995"
+                - generic [ref=e909]:
+                  - button "Request" [ref=e910] [cursor=pointer]
+                  - button "Add to favorites" [ref=e911] [cursor=pointer]: ★
+              - article [ref=e912]:
+                - generic [ref=e913]:
+                  - generic [ref=e914]: Addicted
+                  - generic [ref=e915]: Sweetbox
+                - generic [ref=e916]: Pop / Variety
+                - generic [ref=e918]: "21421"
+                - generic [ref=e919]:
+                  - button "Request" [ref=e920] [cursor=pointer]
+                  - button "Add to favorites" [ref=e921] [cursor=pointer]: ★
+              - article [ref=e922]:
+                - generic [ref=e923]:
+                  - generic [ref=e924]: Adia
+                  - generic [ref=e925]: SARAH McLACHLAN
+                - generic [ref=e926]: Pop / Variety
+                - generic [ref=e928]: "20174"
+                - generic [ref=e929]:
+                  - button "Request" [ref=e930] [cursor=pointer]
+                  - button "Add to favorites" [ref=e931] [cursor=pointer]: ★
+              - article [ref=e932]:
+                - generic [ref=e933]:
+                  - generic [ref=e934]: Adoro
+                  - generic [ref=e935]: Vikki Carr
+                - generic [ref=e936]: Pop / Variety
+                - generic [ref=e938]: "7113"
+                - generic [ref=e939]:
+                  - button "Request" [ref=e940] [cursor=pointer]
+                  - button "Add to favorites" [ref=e941] [cursor=pointer]: ★
+              - article [ref=e942]:
+                - generic [ref=e943]:
+                  - generic [ref=e944]: Adrienne
+                  - generic [ref=e945]: The Calling
+                - generic [ref=e946]: Alternative / Indie
+                - generic [ref=e948]: "20329"
+                - generic [ref=e949]:
+                  - button "Request" [ref=e950] [cursor=pointer]
+                  - button "Add to favorites" [ref=e951] [cursor=pointer]: ★
+              - article [ref=e952]:
+                - generic [ref=e953]:
+                  - generic [ref=e954]: Adventure Of A Lifetime
+                  - generic [ref=e955]: Coldplay
+                - generic [ref=e956]: Alternative / Indie
+                - generic [ref=e958]: "22955"
+                - generic [ref=e959]:
+                  - button "Request" [ref=e960] [cursor=pointer]
+                  - button "Add to favorites" [ref=e961] [cursor=pointer]: ★
+              - article [ref=e962]:
+                - generic [ref=e963]:
+                  - generic [ref=e964]: Africa
+                  - generic [ref=e965]: Toto
+                - generic [ref=e966]: Classic Rock
+                - generic [ref=e968]: "7861"
+                - generic [ref=e969]:
+                  - button "Request" [ref=e970] [cursor=pointer]
+                  - button "Add to favorites" [ref=e971] [cursor=pointer]: ★
+              - article [ref=e972]:
+                - generic [ref=e973]:
+                  - generic [ref=e974]: After All
+                  - generic [ref=e975]: Al Jarreau
+                - generic [ref=e976]: Pop / Variety
+                - generic [ref=e978]: "21578"
+                - generic [ref=e979]:
+                  - button "Request" [ref=e980] [cursor=pointer]
+                  - button "Add to favorites" [ref=e981] [cursor=pointer]: ★
+              - article [ref=e982]:
+                - generic [ref=e983]:
+                  - generic [ref=e984]: After All
+                  - generic [ref=e985]: Cher & Peter Cetera
+                - generic [ref=e986]: Pop / Variety
+                - generic [ref=e988]: "22917"
+                - generic [ref=e989]:
+                  - button "Request" [ref=e990] [cursor=pointer]
+                  - button "Add to favorites" [ref=e991] [cursor=pointer]: ★
+              - article [ref=e992]:
+                - generic [ref=e993]:
+                  - generic [ref=e994]: After Midnight
+                  - generic [ref=e995]: Eric Clapton
+                - generic [ref=e996]: Pop / Variety
+                - generic [ref=e998]: "20784"
+                - generic [ref=e999]:
+                  - button "Request" [ref=e1000] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1001] [cursor=pointer]: ★
+              - article [ref=e1002]:
+                - generic [ref=e1003]:
+                  - generic [ref=e1004]: After The Love Has Gone
+                  - generic [ref=e1005]: Earth Wind & Fire
+                - generic [ref=e1006]: Pop / Variety
+                - generic [ref=e1008]: "21331"
+                - generic [ref=e1009]:
+                  - button "Request" [ref=e1010] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1011] [cursor=pointer]: ★
+              - article [ref=e1012]:
+                - generic [ref=e1013]:
+                  - generic [ref=e1014]: Afternoon Delight
+                  - generic [ref=e1015]: Starland Vocal Band
+                - generic [ref=e1016]: Pop / Variety
+                - generic [ref=e1018]: "22985"
+                - generic [ref=e1019]:
+                  - button "Request" [ref=e1020] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1021] [cursor=pointer]: ★
+              - article [ref=e1022]:
+                - generic [ref=e1023]:
+                  - generic [ref=e1024]: Again
+                  - generic [ref=e1025]: Janet Jackson
+                - generic [ref=e1026]: R&B / Soul
+                - generic [ref=e1028]: "22218"
+                - generic [ref=e1029]:
+                  - button "Request" [ref=e1030] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1031] [cursor=pointer]: ★
+              - article [ref=e1032]:
+                - generic [ref=e1033]:
+                  - generic [ref=e1034]: Again
+                  - generic [ref=e1035]: Lenny Kravitz
+                - generic [ref=e1036]: Pop / Variety
+                - generic [ref=e1038]: "7975"
+                - generic [ref=e1039]:
+                  - button "Request" [ref=e1040] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1041] [cursor=pointer]: ★
+              - article [ref=e1042]:
+                - generic [ref=e1043]:
+                  - generic [ref=e1044]: Against All Odds
+                  - generic [ref=e1045]: Phil Collins
+                - generic [ref=e1046]: Classic Rock
+                - generic [ref=e1048]: "7535"
+                - generic [ref=e1049]:
+                  - button "Request" [ref=e1050] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1051] [cursor=pointer]: ★
+              - article [ref=e1052]:
+                - generic [ref=e1053]:
+                  - generic [ref=e1054]: Against The Wind
+                  - generic [ref=e1055]: Bob Seger
+                - generic [ref=e1056]: Pop / Variety
+                - generic [ref=e1058]: "20501"
+                - generic [ref=e1059]:
+                  - button "Request" [ref=e1060] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1061] [cursor=pointer]: ★
+              - article [ref=e1062]:
+                - generic [ref=e1063]:
+                  - generic [ref=e1064]: Ai No Corrida
+                  - generic [ref=e1065]: Quincy Jones
+                - generic [ref=e1066]: Pop / Variety
+                - generic [ref=e1068]: "21530"
+                - generic [ref=e1069]:
+                  - button "Request" [ref=e1070] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1071] [cursor=pointer]: ★
+              - article [ref=e1072]:
+                - generic [ref=e1073]:
+                  - generic [ref=e1074]: Ain'T Giving Up
+                  - generic [ref=e1075]: Craig David & Sigala
+                - generic [ref=e1076]: Electronic / Dance
+                - generic [ref=e1078]: "23105"
+                - generic [ref=e1079]:
+                  - button "Request" [ref=e1080] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1081] [cursor=pointer]: ★
+              - article [ref=e1082]:
+                - generic [ref=e1083]:
+                  - generic [ref=e1084]: Ain'T It Fun
+                  - generic [ref=e1085]: Paramore
+                - generic [ref=e1086]:
+                  - generic [ref=e1087]: Punk / Emo
+                  - generic [ref=e1088]: Karaoke Legend
+                - generic [ref=e1089]: "22703"
+                - generic [ref=e1090]:
+                  - button "Request" [ref=e1091] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1092] [cursor=pointer]: ★
+              - article [ref=e1093]:
+                - generic [ref=e1094]:
+                  - generic [ref=e1095]: Ain'T It Funny
+                  - generic [ref=e1096]: Jennifer Lopez
+                - generic [ref=e1097]: Latin Pop
+                - generic [ref=e1099]: "20277"
+                - generic [ref=e1100]:
+                  - button "Request" [ref=e1101] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1102] [cursor=pointer]: ★
+              - article [ref=e1103]:
+                - generic [ref=e1104]:
+                  - generic [ref=e1105]: Ain'T My Fault
+                  - generic [ref=e1106]: Zara Larsson
+                - generic [ref=e1107]: Pop / Variety
+                - generic [ref=e1109]: "23077"
+                - generic [ref=e1110]:
+                  - button "Request" [ref=e1111] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1112] [cursor=pointer]: ★
+              - article [ref=e1113]:
+                - generic [ref=e1114]:
+                  - generic [ref=e1115]: Ain'T No Mountain High Enough
+                  - generic [ref=e1116]: Marvin Gaye & Tammi Terr
+                - generic [ref=e1117]:
+                  - generic [ref=e1118]: R&B / Soul
+                  - generic [ref=e1119]: Karaoke Legend
+                - generic [ref=e1120]: "20388"
+                - generic [ref=e1121]:
+                  - button "Request" [ref=e1122] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1123] [cursor=pointer]: ★
+              - article [ref=e1124]:
+                - generic [ref=e1125]:
+                  - generic [ref=e1126]: Ain'T No Other Man
+                  - generic [ref=e1127]: Christina Aquilera
+                - generic [ref=e1128]: Pop / Variety
+                - generic [ref=e1130]: "21453"
+                - generic [ref=e1131]:
+                  - button "Request" [ref=e1132] [cursor=pointer]
+                  - button "Add to favorites" [ref=e1133] [cursor=pointer]: ★
+            - generic [ref=e1134]:
+              - text: Genre tags are broad venue tags. “Karaoke Legend” uses
+              - link "Singa’s 2026 US Top 100" [ref=e1135] [cursor=pointer]:
+                - /url: https://singa.com/blog/100-most-popular-karaoke-songs-united-states/
+              - text: ", based on real karaoke plays."

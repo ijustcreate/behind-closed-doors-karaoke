@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 110" role="img" aria-label="Downward triangle with a microphone and music notes">
+  <defs>
+    <linearGradient id="gold" x1="12" y1="10" x2="108" y2="102" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ffe29a"/>
+      <stop offset=".5" stop-color="#d7a94f"/>
+      <stop offset="1" stop-color="#926c2a"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#gold)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M10 14H110L60 101Z"/>
+    <circle cx="60" cy="43" r="12"/>
+    <path d="M54 55 55 85h10l1-30M57 91h6"/>
+    <circle cx="34" cy="55" r="6"/>
+    <path d="m40 54-2-25 10-1"/>
+    <circle cx="86" cy="55" r="6"/>
+    <path d="m80 54-2-25 10-1"/>
+  </g>
+</svg>
