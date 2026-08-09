@@ -60,20 +60,62 @@
   const nativeToggleFavorite = window.toggleFavorite;
   window.toggleFavorite = id => { nativeToggleFavorite(id); const user = currentUser(); if (user && state.favorites.filter(item => item.userId === user.id).length >= 5) awardAchievement('favorite_five'); };
   const nativeRenderSongs = window.renderSongs;
-  let virtualFrame = 0, virtualKey = '';
+  let virtualFrame = 0, virtualKey = '', virtualWindowKey = '', virtualRenderedKey = '', virtualStart = 0, virtualEnd = 0, virtualStride = 0, virtualSongs = [];
+  const virtualRowStride = () => innerWidth <= 620 ? 45 : 50;
+  const virtualCards = (all, start, end) => all.slice(start, end).map((song, offset) => songCard(song).replace('<article class="song"', `<article class="song" data-virtual-index="${start + offset}"`)).join('');
+  function removeVirtualRange(rows) {
+    if (!rows.length) return;
+    const range = document.createRange();
+    range.setStartBefore(rows[0]); range.setEndAfter(rows[rows.length - 1]); range.deleteContents();
+  }
+  function updateVirtualWindow(results, all, key, start, end, rowHeight) {
+    if (!all.length) {
+      results.innerHTML = emptyHtml('No songs found', 'Try another spelling, artist, genre, or clear the filters.');
+      virtualRenderedKey = key; virtualStart = virtualEnd = 0; virtualStride = rowHeight;
+      return;
+    }
+    const top = results.querySelector('.virtualSpacer[data-edge="top"]'), bottom = results.querySelector('.virtualSpacer[data-edge="bottom"]');
+    const overlaps = start < virtualEnd && end > virtualStart;
+    const canPatch = virtualRenderedKey === key && virtualStride === rowHeight && overlaps && (!start || top) && (end >= all.length || bottom);
+    if (!canPatch) {
+      results.innerHTML = `${start ? `<div class="virtualSpacer" data-edge="top" style="height:${start * rowHeight}px"></div>` : ''}${virtualCards(all, start, end)}${end < all.length ? `<div class="virtualSpacer" data-edge="bottom" style="height:${(all.length - end) * rowHeight}px"></div>` : ''}`;
+    } else {
+      const rows = [...results.querySelectorAll('.song[data-virtual-index]')];
+      removeVirtualRange(rows.filter(row => +row.dataset.virtualIndex < start));
+      removeVirtualRange(rows.filter(row => +row.dataset.virtualIndex >= end));
+      if (start < virtualStart) top.insertAdjacentHTML('afterend', virtualCards(all, start, Math.min(virtualStart, end)));
+      if (end > virtualEnd) bottom.insertAdjacentHTML('beforebegin', virtualCards(all, Math.max(virtualEnd, start), end));
+      if (top) top.style.height = `${start * rowHeight}px`;
+      if (bottom) bottom.style.height = `${(all.length - end) * rowHeight}px`;
+    }
+    virtualRenderedKey = key; virtualStart = start; virtualEnd = end; virtualStride = rowHeight;
+  }
   function renderVirtualSongs() {
-    renderGenres(); const all = filteredSongs(); songbookAll = all;
     const results = document.getElementById('songResults'); if (!results) return;
-    const rowHeight = innerWidth <= 620 ? 54 : 58, top = results.getBoundingClientRect().top + scrollY;
-    const scrollIntoList = Math.max(0, scrollY - top), start = Math.max(0, Math.floor(scrollIntoList / rowHeight) - 35), count = Math.ceil(innerHeight / rowHeight) + 90, end = Math.min(all.length, start + count);
-    const key = `${currentFilters.q}|${currentFilters.genre}|${currentFilters.sort}|${all.length}`;
-    document.getElementById('resultCount').textContent = `${all.length.toLocaleString()} ${currentFilters.genre === 'duets' ? 'duets available' : 'songs'}`;
-    results.innerHTML = `${start ? `<div class="virtualSpacer" style="height:${start * rowHeight}px"></div>` : ''}${all.slice(start, end).map(songCard).join('') || emptyHtml('No songs found', 'Try another spelling, artist, genre, or clear the filters.')}${end < all.length ? `<div class="virtualSpacer" style="height:${(all.length - end) * rowHeight}px"></div>` : ''}`;
-    if (key !== virtualKey) { virtualKey = key; renderAlphaRail(all); }
+    const overrideKey = Object.entries(state.genreOverrides || {}).map(([id, genre]) => `${id}:${genre}`).join('|');
+    const user = currentUser(), favoriteKey = (state.favorites || []).filter(item => item.userId === user?.id).map(item => item.songId).join(',');
+    const key = `${currentFilters.q}|${currentFilters.genre}|${currentFilters.sort}|${overrideKey}|${user?.id || ''}|${favoriteKey}`;
+    if (key !== virtualKey) {
+      virtualKey = key; virtualWindowKey = '';
+      renderGenres(); virtualSongs = filteredSongs(); songbookAll = virtualSongs;
+      document.getElementById('resultCount').textContent = `${virtualSongs.length.toLocaleString()} ${currentFilters.genre === 'duets' ? 'duets available' : 'songs'}`;
+      renderAlphaRail(virtualSongs);
+    }
+    const all = virtualSongs, rowHeight = virtualRowStride(), top = results.getBoundingClientRect().top + scrollY;
+    const scrollIntoList = Math.max(0, scrollY - top), firstVisible = Math.floor(scrollIntoList / rowHeight);
+    const chunk = 24, overscan = 72, count = Math.ceil(innerHeight / rowHeight) + overscan * 2;
+    const calculatedStart = Math.floor(Math.max(0, firstVisible - overscan) / chunk) * chunk;
+    const start = Math.min(Math.max(0, all.length - count), calculatedStart), end = Math.min(all.length, start + count);
+    const windowKey = `${key}|${rowHeight}|${start}|${end}`;
+    if (windowKey !== virtualWindowKey) {
+      virtualWindowKey = windowKey;
+      results.style.overflowAnchor = 'none';
+      updateVirtualWindow(results, all, key, start, end, rowHeight);
+    }
     document.getElementById('scrollSentinel').classList.add('done');
   }
   window.renderSongs = renderVirtualSongs;
-  window.jumpToLetter = letter => { const all = filteredSongs(), index = all.findIndex(song => songInitial(song) === letter); if (index < 0) return; setActiveAlpha(letter); const results = document.getElementById('songResults'), top = results.getBoundingClientRect().top + scrollY; scrollTo({ top: Math.max(0, top + index * (innerWidth <= 620 ? 54 : 58) - 120), behavior: 'auto' }); setTimeout(renderVirtualSongs, 0); };
+  window.jumpToLetter = letter => { const all = virtualKey ? virtualSongs : filteredSongs(), index = all.findIndex(song => songInitial(song) === letter); if (index < 0) return; setActiveAlpha(letter); const results = document.getElementById('songResults'), top = results.getBoundingClientRect().top + scrollY; virtualWindowKey = ''; scrollTo({ top: Math.max(0, top + index * virtualRowStride() - 120), behavior: 'auto' }); setTimeout(renderVirtualSongs, 0); };
   window.addEventListener('scroll', () => { cancelAnimationFrame(virtualFrame); virtualFrame = requestAnimationFrame(() => { if (activeTab === 'songbook') renderVirtualSongs(); }); }, { passive: true });
   window.renderProfile = function () {
     const user = currentUser(), box = document.getElementById('profileView'); if (!box) return;
