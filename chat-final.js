@@ -81,6 +81,7 @@
     const menu = document.createElement('div');
     menu.id = 'chatActions';
     menu.className = 'chatActions ownActions';
+    menu.dataset.chatId = id;
     menu.setAttribute('role', 'menu');
     menu.innerHTML = '<button type="button" data-action="color">Change my message color</button><button type="button" data-action="edit">Edit this message</button>';
     positionMenu(menu, point);
@@ -238,7 +239,7 @@
     input.maxLength = 1000;
     input.removeAttribute('style');
     input.className = 'control';
-    form.innerHTML = '<div id="chatDraftPreviews" class="chatAttachments" hidden></div><div class="chatComposeGrid"><div class="chatEntryMain"><div class="chatTextWrap"></div><div class="chatEntryFooter"><button class="btn gold chatSend" type="submit">Send</button><div id="chatTokenCount" class="chatTokenCount" aria-live="polite">0/1000</div></div></div><button class="btn ghost chatPlus" type="button" aria-label="Add pictures">+</button></div><p class="chatRetentionNote">Sent messages and pictures stay in the chat room for one hour, then disappear.</p>';
+    form.innerHTML = '<div id="chatDraftPreviews" class="chatAttachments" hidden></div><div class="chatComposeGrid"><div class="chatTextWrap"><div id="chatTokenCount" class="chatTokenCount" aria-live="polite">0/1000</div></div><div class="chatComposeActions"><button class="btn gold chatSend" type="submit">Send</button><button class="btn ghost chatPlus" type="button" aria-label="Add pictures">+</button></div></div><p class="chatRetentionNote">Sent messages and pictures stay in the chat room for one hour, then disappear.</p>';
     form.querySelector('.chatTextWrap').append(input);
     input.placeholder = 'Say something to the room…';
     input.addEventListener('input', updateComposer);
@@ -249,8 +250,27 @@
       }
     });
     form.querySelector('.chatPlus').addEventListener('click', () => document.getElementById('chatImageInput').click());
+    form.addEventListener('keydown', event => {
+      if (event.target !== input || event.key !== 'Enter' || event.shiftKey || event.isComposing) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      sendChat(event);
+    }, true);
     updateComposer();
   }
+
+  document.addEventListener('click', event => {
+    const action = event.target.closest('#chatActions.ownActions [data-action]');
+    if (!action) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    const menu = action.closest('#chatActions');
+    const id = menu?.dataset.chatId;
+    const name = action.dataset.action;
+    closeChatMenu();
+    if (name === 'color') window.openChatColorPicker?.();
+    if (name === 'edit' && id) window.openChatEdit(id);
+  }, true);
 
   document.addEventListener('contextmenu', event => {
     const message = event.target.closest('.chatMessage[data-chat-id]');
@@ -276,15 +296,15 @@
   window.addEventListener('DOMContentLoaded', () => {
     document.head.insertAdjacentHTML('beforeend', `<style>
       .chatPanel{display:block!important}.chatList{height:min(55vh,560px)!important;min-height:330px!important}.chatComposer{display:block!important;margin-top:8px!important}
-      .chatComposeGrid{display:grid;grid-template-columns:minmax(0,1fr) 58px;gap:7px;align-items:end}.chatEntryMain{min-width:0}.chatTextWrap{border:1px solid rgba(201,162,87,.28);border-radius:3px 3px 0 0;background:rgba(10,7,5,.84)}
-      .chatTextWrap #chatInput{display:block;width:100%!important;min-height:48px!important;max-height:150px!important;margin:0!important;padding:10px 11px!important;border:0!important;background:transparent!important;box-sizing:border-box!important;resize:none!important;overflow-y:auto!important}
-      .chatEntryFooter{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:7px;margin-top:7px}.chatSend{width:100%!important;height:42px!important;min-width:0!important}.chatTokenCount{display:flex!important;align-items:center;justify-content:center;border:0!important;background:transparent!important;color:#8b7e6b!important;font:500 11px ui-sans-serif,system-ui!important}.chatTokenCount.atMax{color:#e0a13c!important;animation:chatCountGlow .8s ease-in-out infinite alternate}.chatPlus{width:58px!important;min-width:0!important;height:42px!important;padding:0!important;font-size:28px!important;line-height:1!important;color:#e4bf69!important}
+      .chatComposeGrid{display:grid;grid-template-columns:minmax(0,1fr) 64px;gap:7px;align-items:stretch}.chatTextWrap{position:relative;min-width:0;border:1px solid rgba(201,162,87,.34);border-radius:3px;background:rgba(10,7,5,.84);overflow:hidden}
+      .chatTextWrap #chatInput{display:block;width:100%!important;min-height:92px!important;max-height:150px!important;margin:0!important;padding:10px 11px 25px!important;border:0!important;background:transparent!important;box-sizing:border-box!important;resize:none!important;overflow-y:auto!important}
+      .chatComposeActions{display:grid;grid-template-rows:minmax(43px,1fr) 43px;gap:7px}.chatSend,.chatPlus{width:64px!important;min-width:0!important;margin:0!important;padding:0 5px!important}.chatSend{height:100%!important;font-size:11px!important}.chatPlus{height:43px!important;font-size:28px!important;line-height:1!important;color:#e4bf69!important}.chatTokenCount{position:absolute!important;right:8px!important;bottom:5px!important;z-index:2!important;display:block!important;border:0!important;background:transparent!important;color:#756f68!important;font:500 10px/1 ui-sans-serif,system-ui!important;pointer-events:none}.chatTokenCount.atMax{color:#e0a13c!important;animation:chatCountGlow .8s ease-in-out infinite alternate}
       @keyframes chatCountGlow{to{color:#f2bd58;text-shadow:0 0 8px rgba(224,161,60,.35)}}
       .chatRetentionNote{margin:7px 2px 0;color:#776e62;font:500 9px/1.35 ui-sans-serif,system-ui;text-align:center}.chatAttachments{display:flex!important;gap:6px;min-height:0;margin:0 0 7px!important;padding:0!important;overflow-x:auto}.chatAttachments[hidden]{display:none!important}.chatDraftThumb{position:relative;flex:0 0 46px;width:46px;height:46px;border:1px solid rgba(201,162,87,.38);border-radius:5px;background:#100b08}.chatDraftThumb img{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px}.chatDraftThumb button{position:absolute;right:-5px;top:-6px;display:grid;place-items:center;width:17px;height:17px;padding:0;border:1px solid #c9a257;border-radius:50%;background:#24120f;color:#f5dfb8;font:700 13px/1 ui-sans-serif;cursor:pointer}
       .chatMessage{position:relative}.chatMessage:has(.chatReactionEdge){margin-bottom:12px}.chatMessageImages{display:grid;grid-template-columns:repeat(2,72px);gap:5px;margin-top:7px}.chatMessageImages:not(.multiple){grid-template-columns:112px}.chatImageThumb{display:block;width:72px;height:72px;padding:0;border:1px solid rgba(201,162,87,.32);border-radius:6px;overflow:hidden;background:#0b0806;cursor:pointer}.chatMessageImages:not(.multiple) .chatImageThumb{width:112px;height:96px}.chatImageThumb img{display:block;width:100%;height:100%;object-fit:cover}.chatReactionEdge{position:absolute;right:8px;bottom:-13px;display:flex;gap:3px;z-index:2}.chatMessage.other .chatReactionEdge{right:auto;left:8px}.chatReactionCount{display:flex;align-items:center;gap:2px;height:24px;padding:2px 6px;border:1px solid rgba(201,162,87,.38);border-radius:999px;background:#160f0b;color:#ead7b3;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.45)}.chatReactionCount small{font-size:9px;color:#a9997d}
       .chatActions{position:fixed!important;z-index:1100!important}.chatActions.ownActions{display:grid!important;min-width:220px!important;padding:5px!important;border:1px solid rgba(201,162,87,.72)!important;border-radius:6px!important;background:linear-gradient(145deg,#2b1a11,#100b08)!important;box-shadow:0 16px 42px rgba(0,0,0,.68)!important}.chatActions.ownActions button{padding:11px 12px!important;border:0!important;background:transparent!important;color:#efdbaf!important;text-align:left!important;font:600 12px ui-sans-serif,system-ui!important}.chatActions.ownActions button:hover{background:rgba(201,162,87,.14)!important}.chatActions.reactionActions{display:flex!important;gap:2px!important;padding:6px!important;border:1px solid rgba(201,162,87,.65)!important;border-radius:999px!important;background:#17100c!important;box-shadow:0 14px 36px rgba(0,0,0,.66)!important}.chatActions.reactionActions button{display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:transparent;font-size:22px;cursor:pointer;transition:transform .12s,background .12s}.chatActions.reactionActions button:hover,.chatActions.reactionActions button:focus{transform:scale(1.16);background:rgba(201,162,87,.14);outline:0}
       .chatEditing{width:min(78%,620px);box-sizing:border-box}.chatEditing textarea{min-height:78px!important;max-height:180px!important;resize:vertical!important}.chatImageModal .modal{display:flex;flex-direction:column;align-items:center;width:min(92vw,760px);max-width:760px}.chatImageModal img{display:block;max-width:100%;max-height:72vh;object-fit:contain;border:1px solid rgba(201,162,87,.4);background:#080604}.chatImageDownload{display:grid!important;place-items:center;width:42px!important;height:42px!important;margin-top:12px!important;padding:0!important}.chatImageDownload svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
-      @media(max-width:620px){.chatComposeGrid{grid-template-columns:minmax(0,1fr) 52px}.chatEntryFooter{grid-template-columns:minmax(0,1fr) 78px}.chatPlus{width:52px!important}.chatRetentionNote{font-size:8.5px}.chatMessageImages{grid-template-columns:repeat(2,64px)}.chatImageThumb{width:64px;height:64px}.chatMessageImages:not(.multiple){grid-template-columns:96px}.chatMessageImages:not(.multiple) .chatImageThumb{width:96px;height:84px}.chatActions.reactionActions button{width:34px;height:34px;font-size:20px}}
+      @media(max-width:620px){.chatComposeGrid{grid-template-columns:minmax(0,1fr) 56px}.chatSend,.chatPlus{width:56px!important}.chatRetentionNote{font-size:8.5px}.chatMessageImages{grid-template-columns:repeat(2,64px)}.chatImageThumb{width:64px;height:64px}.chatMessageImages:not(.multiple){grid-template-columns:96px}.chatMessageImages:not(.multiple) .chatImageThumb{width:96px;height:84px}.chatActions.reactionActions button{width:34px;height:34px;font-size:20px}}
     </style>`);
     document.getElementById('chatActions')?.remove();
     document.getElementById('chatContext')?.remove();
