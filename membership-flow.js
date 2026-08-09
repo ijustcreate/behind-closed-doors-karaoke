@@ -45,6 +45,7 @@
   let createdGlyph = '';
   let glyphSession = null;
   let glyphFirstEntry = '';
+  let glyphPreviewTimer = 0;
 
   function signedInMember() {
     const user = currentUser?.();
@@ -314,9 +315,35 @@
   function updateGlyphReady() {
     const notes = document.getElementById('clubGlyphReadyNotes');
     const label = document.getElementById('clubGlyphReadyLabel');
-    if (notes) notes.textContent = createdGlyph ? [...createdGlyph].map(value => MUSIC_NOTES[+value]).join(' ') : '○ ○ ○ ○';
+    const action = document.getElementById('clubGlyphActionButton');
+    window.clearTimeout(glyphPreviewTimer);
+    if (notes) {
+      notes.textContent = createdGlyph ? [...createdGlyph].map(value => MUSIC_NOTES[+value]).join(' ') : '○ ○ ○ ○';
+      notes.disabled = !createdGlyph;
+      notes.classList.remove('revealed');
+      notes.setAttribute('aria-pressed', 'false');
+      notes.setAttribute('aria-label', createdGlyph ? 'Press to reveal glyph numbers' : 'No glyph selected');
+    }
     if (label) label.textContent = createdGlyph ? 'Glyph password ready' : 'No glyph selected yet';
+    if (action) action.textContent = createdGlyph ? 'Change glyph' : 'Create glyph';
   }
+
+  window.showGlyphNumbers = function () {
+    const preview = document.getElementById('clubGlyphReadyNotes');
+    if (!preview || !createdGlyph) return;
+    window.clearTimeout(glyphPreviewTimer);
+    preview.textContent = [...createdGlyph].join(' ');
+    preview.classList.add('revealed');
+    preview.setAttribute('aria-pressed', 'true');
+    preview.setAttribute('aria-label', `Glyph numbers ${[...createdGlyph].join(', ')}`);
+    glyphPreviewTimer = window.setTimeout(() => {
+      if (!createdGlyph) return;
+      preview.textContent = [...createdGlyph].map(value => MUSIC_NOTES[+value]).join(' ');
+      preview.classList.remove('revealed');
+      preview.setAttribute('aria-pressed', 'false');
+      preview.setAttribute('aria-label', 'Press to reveal glyph numbers');
+    }, 2400);
+  };
 
   window.submitNewMember = async function () {
     const idField = document.getElementById('clubCreateId');
@@ -556,7 +583,7 @@
           <div class="clubField"><label for="clubCreateDisplay">Display name <span aria-hidden="true">&middot;</span> optional</label><input id="clubCreateDisplay" class="control" maxlength="40" autocomplete="nickname" placeholder="What people see in the club"><small>Display names do not need to be unique.</small></div>
           <div class="clubPasswordLegend">Choose a password style</div><div class="clubPasswordModes"><button class="clubPasswordMode active" data-mode="regular" type="button" onclick="setClubPasswordMode('regular')">Regular password</button><button class="clubPasswordMode" data-mode="glyph" type="button" onclick="setClubPasswordMode('glyph')">Four-point glyph</button></div>
           <div id="clubRegularPasswordPanel" class="clubPasswordPanel"><div class="clubField"><label for="clubCreatePassword">Password</label><input id="clubCreatePassword" class="control" type="password" maxlength="13" autocomplete="new-password" placeholder="Up to 13 characters"><small>No special rules. Maximum 13 characters; leave it blank for ID-only entry.</small></div><div class="clubField"><label for="clubCreatePasswordAgain">Enter it again</label><input id="clubCreatePasswordAgain" class="control" type="password" maxlength="13" autocomplete="new-password" placeholder="Repeat your password"></div></div>
-          <div id="clubGlyphPasswordPanel" class="clubPasswordPanel" hidden><div class="clubGlyphReady"><div><strong id="clubGlyphReadyLabel">No glyph selected yet</strong><div id="clubGlyphReadyNotes" class="clubGlyphNotes">○ ○ ○ ○</div></div><button class="btn ghost small" type="button" onclick="openCreateGlyph()">Create glyph</button></div></div>
+          <div id="clubGlyphPasswordPanel" class="clubPasswordPanel" hidden><div class="clubGlyphReady"><div><strong id="clubGlyphReadyLabel">No glyph selected yet</strong><button id="clubGlyphReadyNotes" class="clubGlyphNotes" type="button" onpointerdown="showGlyphNumbers()" onclick="showGlyphNumbers()" aria-label="No glyph selected" aria-pressed="false" disabled>○ ○ ○ ○</button></div><button id="clubGlyphActionButton" class="btn ghost small" type="button" onclick="openCreateGlyph()">Create glyph</button></div></div>
           <p id="clubCreateStatus" class="clubFormStatus" aria-live="polite"></p><div class="modalActions"><button class="btn ghost" type="button" onclick="backToClubWelcome()">Back</button><button id="clubCreateSubmit" class="btn gold" type="button" onclick="submitNewMember()">Join the Club</button></div>
         </div>
       </div>

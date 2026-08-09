@@ -27,8 +27,14 @@
 .clubPasswordMode.active{border-color:#c9a257;color:#f3dca9;background:linear-gradient(#382716,#17100a);box-shadow:inset 0 0 0 1px rgba(245,210,139,.1)}
 .clubPasswordPanel[hidden]{display:none!important}
 .clubGlyphReady{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px;border:1px solid rgba(73,170,255,.3);background:rgba(17,73,111,.14)}
+.clubGlyphReady>div{min-width:0}
 .clubGlyphReady strong{color:#a8dfff;font:600 13px ui-sans-serif,system-ui}
-.clubGlyphNotes{color:#7bc9ff;font:700 21px/1 Georgia,"Times New Roman",serif;letter-spacing:.23em;text-shadow:0 0 10px #168ee0}
+.clubGlyphNotes{display:block;min-height:28px;margin:3px 0 0;padding:3px 6px 4px;border:1px solid transparent;border-radius:3px;background:transparent;color:#7bc9ff;text-align:left;touch-action:manipulation;-webkit-user-select:none;user-select:none;font:700 21px/1 Georgia,"Times New Roman",serif;letter-spacing:.23em;text-shadow:0 0 10px #168ee0}
+.clubGlyphNotes:not(:disabled){cursor:pointer}
+.clubGlyphNotes:not(:disabled):hover,.clubGlyphNotes:not(:disabled):focus-visible{border-color:rgba(103,201,255,.36);outline:none;background:rgba(34,126,180,.12)}
+.clubGlyphNotes:not(:disabled):active{transform:scale(.97)}
+.clubGlyphNotes:disabled{opacity:.46}
+.clubGlyphNotes.revealed{color:#c9ecff;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:18px;letter-spacing:.38em;text-shadow:0 0 7px #219de2,0 0 15px rgba(44,166,239,.66)}
 .clubFormStatus{min-height:18px;margin:8px 0 0;color:#d79b78;font-size:11px;line-height:1.4}
 .clubFormStatus.success{color:#8bd0a1}
 .clubSuggestions{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
