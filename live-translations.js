@@ -33,7 +33,7 @@
   function translateLive() {
     if (translating) return; translating = true;
     const t = copy[language()] || copy.en;
-    setText(document.querySelector('.brand small'), t.tag); translateSongButtons(t); translateAccount(t);
+    setText(document.querySelector('.brand small'), 'Behind Closed Doors Karaoke Club'); translateSongButtons(t); translateAccount(t);
     translating = false;
   }
   window.applyLiveTranslations = translateLive;
