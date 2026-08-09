@@ -89,19 +89,38 @@
     const response=await fetch(`${SUPABASE_URL}/functions/v1/karaoke-profile`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({action})}),result=await response.json();
     if(!response.ok)throw new Error(result.error||'Menu service unavailable');return result;
   }
+  function ensurePersistentMenuPicker(){
+    const select=document.getElementById('savedMenuSelect'),controls=select?.closest('.menuTopControls');if(!select||!controls)return;
+    select.hidden=true;
+    const admin=!!currentUser()?.isAdmin;
+    let button=document.getElementById('menuPickerButton');
+    if(!admin){button?.remove();return}
+    if(!button){
+      button=document.createElement('button');button.id='menuPickerButton';button.type='button';button.className='menuPickerButton';
+      const label=document.createElement('span'),arrow=document.createElement('span');arrow.setAttribute('aria-hidden','true');arrow.textContent='⌄';button.append(label,arrow);
+      button.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();openThemedMenuPicker()});controls.insertBefore(button,select);
+    }
+    const label=button.querySelector('span:first-child'),name=select.selectedOptions?.[0]?.textContent||state.activeDrinkMenu||'Saved menus';
+    if(label&&label.textContent!==name)label.textContent=name;
+    button.setAttribute('aria-label',select.getAttribute('aria-label')||'Saved menus');button.hidden=false;
+  }
   let sharedMenuStamp='';
   window.syncSharedDrinkMenu=async()=>{
     if(menuEditing)return;
-    try{const result=await menuSettingAction('get_active_menu'),menu=result.menu;if(!menu?.name||!Array.isArray(menu.drinks)||result.updatedAt===sharedMenuStamp)return;sharedMenuStamp=result.updatedAt||JSON.stringify(menu);state.drinkMenus||={};state.drinkMenus[menu.name]=menu;state.activeDrinkMenu=menu.name;saveState();renderDrinkMenu();renderMenuLibrary()}catch(error){console.warn('Live drink menu unavailable',error)}
+    try{const result=await menuSettingAction('get_active_menu'),menu=result.menu;if(!menu?.name||!Array.isArray(menu.drinks)||result.updatedAt===sharedMenuStamp){ensurePersistentMenuPicker();return}sharedMenuStamp=result.updatedAt||JSON.stringify(menu);state.drinkMenus||={};state.drinkMenus[menu.name]=menu;state.activeDrinkMenu=menu.name;saveState();renderDrinkMenu();renderMenuLibrary();ensurePersistentMenuPicker()}catch(error){console.warn('Live drink menu unavailable',error)}
   };
   const nativeSelectDrinkMenu=window.selectDrinkMenu;
   window.selectDrinkMenu=async name=>{
     if(!currentUser()?.isAdmin)return;if(menuEditing&&menuDirty)return openMenuSaveDialog();const menu=state.drinkMenus?.[name];if(!menu)return;
-    try{await menuSettingAction('set_active_menu',menu);sharedMenuStamp='';nativeSelectDrinkMenu(name);await syncSharedDrinkMenu()}catch(error){toast(error.message||'The live menu could not be changed')}
+    try{await menuSettingAction('set_active_menu',menu);sharedMenuStamp='';nativeSelectDrinkMenu(name);ensurePersistentMenuPicker();await syncSharedDrinkMenu()}catch(error){toast(error.message||'The live menu could not be changed')}finally{ensurePersistentMenuPicker()}
   };
+  const persistentRenderDrinkMenu=window.renderDrinkMenu;
+  window.renderDrinkMenu=()=>{const result=persistentRenderDrinkMenu();ensurePersistentMenuPicker();requestAnimationFrame(ensurePersistentMenuPicker);return result};
+  const persistentRenderMenuLibrary=window.renderMenuLibrary;
+  window.renderMenuLibrary=()=>{const result=persistentRenderMenuLibrary();ensurePersistentMenuPicker();requestAnimationFrame(ensurePersistentMenuPicker);return result};
   const nativeOpenPicker=window.openThemedMenuPicker;
   window.openThemedMenuPicker=()=>{if(currentUser()?.isAdmin)nativeOpenPicker()};
-  function enforceMenuAccess(){const admin=!!currentUser()?.isAdmin;document.body.classList.toggle('menu-admin',admin);document.getElementById('menuPickerButton')?.toggleAttribute('hidden',!admin);if(!admin)closeThemedMenuPicker?.()}
+  function enforceMenuAccess(){const admin=!!currentUser()?.isAdmin;document.body.classList.toggle('menu-admin',admin);ensurePersistentMenuPicker();if(!admin)closeThemedMenuPicker?.()}
 
   const nativeShowAchievementList=window.showAchievementList;
   window.showAchievementList=()=>{nativeShowAchievementList();setTimeout(()=>{const keys=Object.keys(ACHIEVEMENTS);document.querySelectorAll('#achievementListModal li').forEach((item,index)=>{const meta=achievementTranslations[language()]?.[keys[index]];if(!meta)return;const title=item.querySelector('strong'),copy=item.querySelector('small');if(title)title.textContent=meta[0];if(copy)copy.textContent=meta[1]})},0)};
@@ -113,5 +132,6 @@
     document.head.insertAdjacentHTML('beforeend',`<style>body:not(.menu-admin) #menuPickerButton{display:none!important}.menuIntro .backBarShelf img{object-position:center 38%!important}.barMenu [data-admin-editable][contenteditable="true"]{outline:none!important}.profileActions{flex-wrap:wrap!important;overflow:visible!important}.profileActions .profileLanguage{width:auto!important;min-width:112px!important;padding:6px 24px 6px 8px!important}.historyRequest{padding:5px 7px!important;font-size:9px!important}.historyFavorite{display:grid!important;place-items:center;width:28px!important;height:28px!important;padding:0!important;font-size:17px!important}.historyFavorite.active{color:#f0c866!important}.accountSongRow>div:last-child{flex-wrap:wrap;justify-content:flex-end}@media(max-width:620px){.profileActions{width:100%;gap:5px!important}.profileActions .btn{font-size:9px!important;padding:6px 7px!important}.profileActions .profileLanguage{font-size:10px!important;max-width:125px}.historyRequest{font-size:8px!important;padding:4px 5px!important}.historyFavorite{width:25px!important;height:25px!important}}</style>`);
     enforceMenuAccess();polishAccount();syncSharedDrinkMenu();setInterval(syncSharedDrinkMenu,15000);
     const profile=document.getElementById('profileView');if(profile)new MutationObserver(()=>requestAnimationFrame(polishAccount)).observe(profile,{childList:true,subtree:true});
+    const menuPage=document.querySelector('.menuPage');if(menuPage)new MutationObserver(()=>requestAnimationFrame(ensurePersistentMenuPicker)).observe(menuPage,{childList:true,subtree:true});
   });
 })();
