@@ -8,6 +8,11 @@ const shape=(p:any)=>({id:p.id,username:p.username,name:p.display_name,isAdmin:!
 const validHash=(value:unknown)=>typeof value==="string"&&/^[0-9a-f]{64}$/i.test(value);
 const hasCredential=(profile:any)=>!!(profile?.password_hash||profile?.glyph_hash);
 const matchesCredential=(profile:any,credential:unknown)=>typeof credential==="string"&&(profile?.password_hash===credential||profile?.glyph_hash===credential);
+const validLanternOverride=(value:unknown)=>{
+ if(!value||typeof value!=="object")return null;
+ const candidate=value as Record<string,unknown>,key=String(candidate.key||"");
+ return /^\d{4}-\d{2}-\d{2}$/.test(key)&&typeof candidate.on==="boolean"?{key,on:candidate.on}:null;
+};
 
 Deno.serve(async(req)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
@@ -20,6 +25,31 @@ Deno.serve(async(req)=>{
    const {data,error}=await admin.from("karaoke_app_settings").select("setting_value,updated_at").eq("setting_key","active_drink_menu").maybeSingle();
    if(error)throw error;
    return json({menu:data?.setting_value||null,updatedAt:data?.updated_at||null});
+  }
+  if(body.action==="get_room_settings"){
+   const {data,error}=await admin.from("karaoke_app_settings").select("setting_key,setting_value").in("setting_key",["karaoke_host_mode","lantern_override"]);
+   if(error)throw error;
+   const values=Object.fromEntries((data||[]).map((row:any)=>[row.setting_key,row.setting_value]));
+   return json({karaokeHostMode:values.karaoke_host_mode===true,lanternOverride:validLanternOverride(values.lantern_override)});
+  }
+  if(body.action==="set_karaoke_host_mode"){
+   const actor=await adminActor();
+   if(actor==="password_required")return json({error:"Add a password to your admin profile before changing Karaoke Host Mode."},403);
+   if(!actor)return json({error:"Admin authorization required"},403);
+   const karaokeHostMode=!!body.karaokeHostMode;
+   const {error}=await admin.from("karaoke_app_settings").upsert({setting_key:"karaoke_host_mode",setting_value:karaokeHostMode,updated_at:new Date().toISOString()},{onConflict:"setting_key"});
+   if(error)throw error;
+   return json({status:"ok",karaokeHostMode});
+  }
+  if(body.action==="set_lantern_override"){
+   const actor=await adminActor();
+   if(actor==="password_required")return json({error:"Add a password to your admin profile before changing the lantern."},403);
+   if(!actor)return json({error:"Admin authorization required"},403);
+   const lanternOverride=validLanternOverride(body.lanternOverride);
+   if(!lanternOverride)return json({error:"Invalid lantern override"},400);
+   const {error}=await admin.from("karaoke_app_settings").upsert({setting_key:"lantern_override",setting_value:lanternOverride,updated_at:new Date().toISOString()},{onConflict:"setting_key"});
+   if(error)throw error;
+   return json({status:"ok",lanternOverride});
   }
   if(body.action==="set_active_menu"){
    const actor=await adminActor();
@@ -35,6 +65,26 @@ Deno.serve(async(req)=>{
   if(body.action==="active_profiles"){const {data,error}=await admin.from("karaoke_profiles").select("id,display_name,last_seen").gte("last_seen",new Date(Date.now()-20*60*1000).toISOString()).order("last_seen",{ascending:false});if(error)throw error;return json({profiles:data.map((p:any)=>({id:p.id,name:p.display_name,lastSeen:p.last_seen}))});}
   if(body.action==="list_profiles"){const actor=await adminActor();if(actor==="password_required")return json({error:"Add a password or glyph to your admin profile before managing staff accounts."},403);if(!actor)return json({error:"Admin authorization required"},403);const {data,error}=await admin.from("karaoke_profiles").select("id,username,display_name,password_hash,glyph_hash,is_admin,last_seen").order("display_name");if(error)throw error;return json({profiles:data.map((profile:any)=>({...shape(profile),hasPassword:hasCredential(profile)}))});}
   if(body.action==="set_admin"){const actor=await adminActor();if(actor==="password_required")return json({error:"Add a password to your admin profile before managing staff accounts."},403);if(!actor)return json({error:"Admin authorization required"},403);const id=String(body.profileId||"");const {data,error}=await admin.from("karaoke_profiles").update({is_admin:!!body.isAdmin}).eq("id",id).select("id,username,display_name,is_admin,last_seen").single();if(error)throw error;return json({profile:shape(data)});}
+  if(body.action==="delete_profile"){
+   const actor=await adminActor();
+   if(actor==="password_required")return json({error:"Add a password or glyph to your admin profile before deleting accounts."},403);
+   if(!actor)return json({error:"Admin authorization required"},403);
+   const id=String(body.profileId||"");
+   if(!id)return json({error:"Choose an account to delete"},400);
+   if(id===actor.id)return json({error:"You cannot delete the administrator account currently in use."},400);
+   const {data:profile,error:profileLookupError}=await admin.from("karaoke_profiles").select("id").eq("id",id).maybeSingle();
+   if(profileLookupError)throw profileLookupError;
+   if(!profile)return json({error:"Account not found"},404);
+   const deletes=[
+    admin.from("karaoke_achievements").delete().eq("profile_id",id),
+    admin.from("karaoke_chat_messages").delete().eq("profile_id",id),
+    admin.from("karaoke_requests").delete().eq("user_id",id)
+   ];
+   for(const request of deletes){const {error}=await request;if(error)throw error;}
+   const {error}=await admin.from("karaoke_profiles").delete().eq("id",id);
+   if(error)throw error;
+   return json({status:"deleted",profileId:id});
+  }
   if(body.action==="reset_password"||body.action==="clear_password"){
    const actor=await adminActor();
    if(actor==="password_required")return json({error:"Add a password or glyph to your admin profile before resetting account passwords."},403);

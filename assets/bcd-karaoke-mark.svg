@@ -6,13 +6,13 @@
       <stop offset="1" stop-color="#926c2a"/>
     </linearGradient>
   </defs>
-  <g fill="none" stroke="url(#gold)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M10 14H110L60 101Z"/>
-    <circle cx="60" cy="43" r="12"/>
-    <path d="M54 55 55 85h10l1-30M57 91h6"/>
-    <circle cx="34" cy="55" r="6"/>
-    <path d="m40 54-2-25 10-1"/>
-    <circle cx="86" cy="55" r="6"/>
-    <path d="m80 54-2-25 10-1"/>
+  <g fill="none" stroke="url(#gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M60 7 111 100H9Z"/>
+    <circle cx="60" cy="43" r="11"/>
+    <path d="M54 54v20h12V54M60 74v9m-6 0h12"/>
+    <circle cx="34" cy="50" r="5"/>
+    <path d="M39 50V28h12"/>
+    <circle cx="76" cy="50" r="5"/>
+    <path d="M81 50V28h12"/>
   </g>
 </svg>
