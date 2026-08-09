@@ -7,6 +7,14 @@
     tl:{language:'Wika',color:'Kulay ng chat',password:'Magdagdag ng password',request:'Humiling'}
   };
   const logoutLabels={en:'Log out',es:'Cerrar sesión',ko:'로그아웃',zh:'退出登录',ja:'ログアウト',fr:'Se déconnecter',it:'Esci',ru:'Выйти',tl:'Mag-log out'};
+  const profileIdentityLabels={
+    en:{display:'Display name',account:'Account name',unlocked:'Unlocked',missing:'Song not recorded'},es:{display:'Nombre visible',account:'Nombre de cuenta',unlocked:'Desbloqueado',missing:'Canción no registrada'},
+    ko:{display:'표시 이름',account:'계정 이름',unlocked:'획득일',missing:'노래 기록 없음'},zh:{display:'显示名称',account:'账户名',unlocked:'解锁于',missing:'未记录歌曲'},
+    ja:{display:'表示名',account:'アカウント名',unlocked:'獲得日',missing:'曲の記録なし'},fr:{display:'Nom affiché',account:'Nom du compte',unlocked:'Débloqué',missing:'Chanson non enregistrée'},
+    it:{display:'Nome visualizzato',account:'Nome account',unlocked:'Sbloccato',missing:'Brano non registrato'},ru:{display:'Отображаемое имя',account:'Имя аккаунта',unlocked:'Получено',missing:'Песня не записана'},
+    tl:{display:'Display name',account:'Account name',unlocked:'Nakuha',missing:'Walang naitalang kanta'}
+  };
+  const achievementLocales={en:'en-US',es:'es-ES',ko:'ko-KR',zh:'zh-CN',ja:'ja-JP',fr:'fr-FR',it:'it-IT',ru:'ru-RU',tl:'fil-PH'};
   const achievementTranslations = {
     en:{night_owl:['Night Owl','Sing a song after midnight.'],closing_time:['Closing Time','Sing “Closing Time” after 1:30 a.m.'],early_bird:['Early Bird','Sing a song between 7 and 8 p.m.']},
     es:{night_owl:['Ave nocturna','Canta una canción después de medianoche.'],closing_time:['Hora de cerrar','Canta “Closing Time” después de la 1:30 a. m.'],early_bird:['Madrugador','Canta una canción entre las 7 y las 8 p. m.']},
@@ -30,8 +38,14 @@
   });
 
   function language() { return currentUser()?.language || 'en'; }
+  function polishProfileIdentity(){
+    const user=currentUser(),bar=document.querySelector('#profileView .profileBar'),name=bar?.querySelector('.profileBarName');if(!user||user.guest||!bar||!name)return;
+    const text=profileIdentityLabels[language()]||profileIdentityLabels.en,html=`<span class="profileIdentityLabel">${esc(text.display)}</span><strong>${esc(user.name)}</strong><span class="profileAccountName">${esc(text.account)}: ${esc(user.username||user.name)}</span>`;
+    if(name.innerHTML!==html)name.innerHTML=html;
+    const eyebrow=bar.querySelector('.eyebrow');if(eyebrow)eyebrow.textContent=PROFILE_LANGUAGES[language()]?.profile||'Singer profile';
+  }
   function ensureProfileControls() {
-    const user=currentUser(), actions=document.querySelector('#profileView .profileActions'); if(!user||user.guest||!actions)return;
+    const user=currentUser(), actions=document.querySelector('#profileView .profileActions'),bar=actions?.closest('.profileBar'); if(!user||user.guest||!actions||!bar)return;
     const text=labels[language()]||labels.en;
     let password=document.getElementById('profilePasswordButton')||actions.querySelector('button[onclick="changePassword()"]');
     if(!password){password=document.createElement('button');password.id='profilePasswordButton';password.type='button';password.className='btn small';password.onclick=changePassword;actions.append(password)}
@@ -48,23 +62,35 @@
     const options=Object.entries(PROFILE_LANGUAGES).map(([code,value])=>`<option value="${code}" ${code===language()?'selected':''}>${esc(value.name)}</option>`).join('');
     if(picker.innerHTML!==options)picker.innerHTML=options;
     let logoutButton=document.getElementById('profileLogoutButton')||actions.querySelector('button[onclick="logout()"]');
-    if(!logoutButton){logoutButton=document.createElement('button');logoutButton.type='button';logoutButton.className='btn ghost small';logoutButton.onclick=logout;actions.append(logoutButton)}
+    if(!logoutButton){logoutButton=document.createElement('button');logoutButton.type='button';logoutButton.className='btn ghost small';logoutButton.onclick=logout}
     logoutButton.id='profileLogoutButton';logoutButton.textContent=logoutLabels[language()]||logoutLabels.en;
+    if(logoutButton.parentElement!==bar)bar.append(logoutButton);
     actions.querySelectorAll('button[onclick="openLogin()"]').forEach(button=>button.remove());
+    polishProfileIdentity();
   }
 
   function polishHistoryActions() {
     const user=currentUser(),sections=document.querySelectorAll('#profileView .accountSection');if(!user||user.guest||!sections[1])return;
-    const history=state.history.filter(item=>item.userId===user.id),text=labels[language()]||labels.en;
+    const history=state.history.filter(item=>item.userId===user.id),text=labels[language()]||labels.en,requestsEnabled=hostModeEnabled();
     sections[1].querySelectorAll('.accountSongRow').forEach((row,index)=>{
       const item=history[index],song=songById(item?.songId),actions=row.lastElementChild;if(!item||!song||!actions)return;
-      if(!actions.querySelector('.historyRequest'))actions.insertAdjacentHTML('beforeend',`<button class="btn small historyRequest" onclick="requestSong('${song.id}')">${esc(text.request)}</button>`);
+      actions.querySelector('.historyRequest')?.remove();
+      if(requestsEnabled)actions.insertAdjacentHTML('beforeend',`<button class="btn small historyRequest" onclick="requestSong('${song.id}')">${esc(text.request)}</button>`);
       const favorite=state.favorites.some(entry=>entry.userId===user.id&&entry.songId===song.id);let star=actions.querySelector('.historyFavorite');
       if(!star){star=document.createElement('button');star.type='button';star.className='btn ghost historyFavorite';star.onclick=()=>toggleFavorite(song.id);actions.append(star)}
       star.textContent=favorite?'★':'☆';star.classList.toggle('active',favorite);star.setAttribute('aria-label',favorite?'Remove from favorites':'Add to favorites');
     });
+    if(!requestsEnabled)document.querySelectorAll('#profileView button[onclick^="requestSong"]').forEach(button=>button.remove());
   }
   function polishAccount(){ensureProfileControls();polishHistoryActions()}
+  async function updateSharedDisplayName(user,displayName,passwordHash){
+    const response=await fetch(`${SUPABASE_URL}/functions/v1/karaoke-profile`,{method:'POST',headers:{apikey:SUPABASE_KEY,Authorization:`Bearer ${SUPABASE_KEY}`,'Content-Type':'application/json'},body:JSON.stringify({action:'update_display_name',profileId:user.id,displayName,passwordHash})}),result=await response.json();
+    if(!response.ok)throw new Error(result.error||'Display name could not be updated');return result.profile;
+  }
+  window.renameProfile=async()=>{
+    const user=currentUser();if(!user||user.guest)return;const name=prompt('Display name',user.name);if(name===null||!name.trim())return;const displayName=name.trim();
+    try{if(user.remoteProfile){let passwordHash=null;if(user.passwordHash==='REMOTE'){const password=prompt('Current password');if(password===null)return;passwordHash=await hashPassword(password)}const profile=await updateSharedDisplayName(user,displayName,passwordHash);user.name=profile.name;user.username=profile.username}else user.name=displayName;saveState();renderProfile();toast('Display name updated')}catch(error){toast(error.message||'Display name could not be updated')}
+  };
   function polishChatComposer(){
     const form=document.querySelector('.chatComposer'),input=document.getElementById('chatInput'),send=form?.querySelector('button[type="submit"]'),count=document.getElementById('chatTokenCount'),plus=form?.querySelector('.chatPlus');
     if(!form||!input||!send||!count||!plus||form.querySelector('.chatEntryMain'))return;
@@ -73,6 +99,18 @@
   }
   const nativeRenderProfile=window.renderProfile;
   window.renderProfile=()=>{nativeRenderProfile();enforceMenuAccess();requestAnimationFrame(polishAccount);setTimeout(polishAccount,30)};
+  const nativeSetHostMode=window.setHostMode;
+  window.setHostMode=enabled=>{const result=nativeSetHostMode(enabled);requestAnimationFrame(polishAccount);return result};
+
+  function achievementSongId(key){
+    const user=currentUser();if(!user)return null;
+    if(key==='favorite_five')return state.favorites.filter(item=>item.userId===user.id).at(-1)?.songId||null;
+    const history=state.history.filter(item=>item.userId===user.id);
+    if(key==='first_request'||key==='request_ten')return history[0]?.songId||null;
+    if(/^(first_song|perfect_score|duet_debut|genre_|all_genres|two_week_streak|three_week_streak|four_week_streak|thursday_regular|night_owl|early_bird|closing_time)/.test(key))return history.filter(item=>item.status==='sung').sort((a,b)=>(b.completedAt||b.requestedAt||0)-(a.completedAt||a.requestedAt||0))[0]?.songId||null;
+    return null;
+  }
+  window.awardAchievement=async(key,songId=achievementSongId(key))=>{try{const result=await achievementAction('award',{achievementKey:key,...(songId?{songId}:{})});if(result?.newAchievement)toast(`Achievement unlocked: ${ACHIEVEMENTS[key]?.title||key}`)}catch(error){console.warn('Achievement unavailable',error)}};
 
   const nativeSendChat=window.sendChat;
   window.sendChat=event=>{
@@ -131,11 +169,22 @@
   const nativeShowAchievementList=window.showAchievementList;
   window.showAchievementList=()=>{nativeShowAchievementList();setTimeout(()=>{const keys=Object.keys(ACHIEVEMENTS);document.querySelectorAll('#achievementListModal li').forEach((item,index)=>{const meta=achievementTranslations[language()]?.[keys[index]];if(!meta)return;const title=item.querySelector('strong'),copy=item.querySelector('small');if(title)title.textContent=meta[0];if(copy)copy.textContent=meta[1]})},0)};
   function localizeTimedAchievementShelf(){document.querySelectorAll('#achievementShelf [data-achievement]').forEach(item=>{const meta=achievementTranslations[language()]?.[item.dataset.achievement];if(!meta)return;const title=item.querySelector('strong'),copy=item.querySelector('span');if(title)title.textContent=meta[0];if(copy)copy.textContent=meta[1]})}
+  function polishAchievementShelf(){
+    let shelf=document.getElementById('achievementShelf');if(!shelf)return;
+    const wasOpen=shelf.matches('details')?shelf.open:(shelf.querySelector('details')?.open??true),rendered=new Map([...shelf.querySelectorAll('[data-achievement]')].map(row=>[row.dataset.achievement,{title:row.querySelector('strong')?.textContent,copy:row.querySelector('span')?.textContent}])),text=profileIdentityLabels[language()]||profileIdentityLabels.en,locale=achievementLocales[language()]||achievementLocales.en;
+    if(!shelf.matches('details')){const details=document.createElement('details');details.id='achievementShelf';details.className='profileBox profileSection accountSection achievements';shelf.replaceWith(details);shelf=details}
+    shelf.open=wasOpen;shelf.className='profileBox profileSection accountSection achievements';
+    const rows=(achievementItems||[]).map(item=>{const localized=rendered.get(item.achievement_key),fallback=localizedAchievementMeta(item.achievement_key),timed=achievementTranslations[language()]?.[item.achievement_key],title=timed?.[0]||localized?.title||fallback.title,copy=timed?.[1]||localized?.copy||fallback.copy,date=item.created_at?new Intl.DateTimeFormat(locale,{dateStyle:'medium'}).format(new Date(item.created_at)):'',song=songById(item.trigger_song_id),trigger=song?`${song.title} · ${song.artist}`:text.missing;return `<div class="achievement" data-achievement="${esc(item.achievement_key)}"><strong>${esc(title)}</strong><span>${esc(copy)}</span><small class="achievementCollected">${esc([date?`${text.unlocked} ${date}`:'',trigger].filter(Boolean).join(' · '))}</small></div>`}).join('');
+    shelf.innerHTML=`<summary class="sectionHead"><div><h2>Achievements</h2><p>Small proofs of a very good night.</p></div><button id="achievementListButton" class="btn small achievementListButton" type="button" onclick="event.preventDefault();event.stopPropagation();showAchievementList()">List</button></summary>${rows||emptyHtml('No achievements yet','Come back after a song or two to build your collection.')}`;
+    applyLiveTranslations?.();
+  }
   const nativeLoadAchievements=window.loadAchievements;
-  window.loadAchievements=async()=>{await nativeLoadAchievements();localizeTimedAchievementShelf()};
+  window.loadAchievements=async()=>{await nativeLoadAchievements();localizeTimedAchievementShelf();polishAchievementShelf()};
 
   window.addEventListener('DOMContentLoaded',()=>{
     document.head.insertAdjacentHTML('beforeend',`<style>body:not(.menu-admin) #menuPickerButton{display:none!important}.brandrow{position:relative!important}.brandrow>.brand{min-height:43px!important}.brandrow>.brand>div:last-child{position:absolute!important;left:50%!important;top:50%!important;width:max-content;max-width:calc(100% - 96px);transform:translate(-50%,-50%)!important;text-align:center!important}.menuIntro .backBarShelf img{object-position:center 38%!important}.barMenu [data-admin-editable][contenteditable="true"]{outline:none!important}.profileActions{flex-wrap:wrap!important;overflow:visible!important}.profileActions .profileLanguage{width:auto!important;min-width:112px!important;padding:6px 24px 6px 8px!important}.historyRequest{padding:5px 7px!important;font-size:9px!important}.historyFavorite{display:grid!important;place-items:center;width:28px!important;height:28px!important;padding:0!important;font-size:17px!important}.historyFavorite.active{color:#f0c866!important}.accountSongRow>div:last-child{flex-wrap:wrap;justify-content:flex-end}.chatComposer{display:block!important}.chatEntryMain{width:100%}.chatEntryMain #chatInput{display:block;width:100%!important;min-height:44px!important;max-height:180px!important;box-sizing:border-box!important;resize:none!important;overflow-y:auto}.chatAttachments{display:flex;gap:5px;margin-bottom:6px}.chatEntryActions{display:grid;grid-template-columns:minmax(0,1fr) minmax(82px,.55fr) 58px;gap:7px;margin-top:7px}.chatEntryActions .btn{width:100%!important;min-width:0!important;height:42px!important;margin:0!important}.chatEntryActions .chatTokenCount{display:flex;align-items:center;padding:0 10px;box-sizing:border-box;border:1px solid rgba(201,162,87,.28);border-radius:3px;background:rgba(12,8,6,.72);color:#97866b;font:600 12px ui-sans-serif,system-ui;white-space:nowrap}.chatEntryActions .chatTokenCount.atMax{border-color:#d69b3c;color:#e5a83e}.chatEntryActions .chatPlus{font-size:24px!important;line-height:1!important;color:#e5c06d!important}@media(max-width:620px){.brand{width:100%!important;padding-left:0!important;padding-right:0!important}.chatEntryActions{grid-template-columns:minmax(0,1fr) minmax(76px,.52fr) 54px;gap:6px}.chatEntryActions .chatTokenCount{padding:0 8px;font-size:11px}.profileActions{width:100%;gap:5px!important}.profileActions .btn{font-size:9px!important;padding:6px 7px!important}.profileActions .profileLanguage{font-size:10px!important;max-width:125px}.historyRequest{font-size:8px!important;padding:4px 5px!important}.historyFavorite{width:25px!important;height:25px!important}}</style>`);
+    document.head.insertAdjacentHTML('beforeend',`<style>.profileBar{position:relative!important;display:block!important;padding:12px 92px 12px 14px!important}.profileBarName{display:grid!important;gap:1px!important;font-family:ui-sans-serif,system-ui!important}.profileBarName strong{color:#e7c985;font:500 19px/1.2 Georgia,serif}.profileIdentityLabel{color:#9c8a6c;font-size:9px;letter-spacing:.12em;text-transform:uppercase}.profileAccountName{margin-top:3px;color:#b6a483;font-size:10px;letter-spacing:.025em}.profileActions{margin-top:10px!important}.profileLanguage{-webkit-appearance:none!important;appearance:none!important;padding-right:28px!important;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8'%3E%3Cpath d='m1 1 5 5 5-5' fill='none' stroke='%23d8b76e' stroke-width='2'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 8px center!important;background-size:10px 7px!important}#profileLogoutButton{position:absolute!important;right:10px!important;top:10px!important;margin:0!important}.achievements.accountSection{padding:0!important}.achievements>summary{min-height:55px!important;box-sizing:border-box!important}.achievements>summary .achievementListButton{margin-left:auto!important;margin-right:8px!important}.achievement strong{font-size:13px!important;line-height:1.2!important}.achievementCollected{grid-column:2!important;display:block;margin-top:3px;color:#8f8067;font:500 9px/1.35 ui-sans-serif,system-ui;letter-spacing:.015em}@media(max-width:620px){.profileBar{padding:10px 78px 10px 10px!important}.profileBarName strong{font-size:17px!important}#profileLogoutButton{right:8px!important;top:8px!important}.achievements>summary{min-height:52px!important}.achievement strong{font-size:12px!important}.achievementCollected{font-size:8.5px!important}}</style>`);
+    const loginName=document.querySelector('label[for="nameInput"]'),loginInput=document.getElementById('nameInput');if(loginName)loginName.textContent='Account name (or guest display name)';if(loginInput)loginInput.placeholder='Enter your account name';
     enforceMenuAccess();polishAccount();polishChatComposer();syncSharedDrinkMenu();setInterval(syncSharedDrinkMenu,15000);
     const profile=document.getElementById('profileView');if(profile)new MutationObserver(()=>requestAnimationFrame(polishAccount)).observe(profile,{childList:true,subtree:true});
     const menuPage=document.querySelector('.menuPage');if(menuPage)new MutationObserver(()=>requestAnimationFrame(ensurePersistentMenuPicker)).observe(menuPage,{childList:true,subtree:true});
