@@ -89,6 +89,27 @@
     root.style.setProperty('--club-vv-height', `${Math.round(viewport?.height || innerHeight)}px`);
     root.style.setProperty('--club-vv-left', `${Math.round(viewport?.offsetLeft || 0)}px`);
     root.style.setProperty('--club-vv-top', `${Math.round(viewport?.offsetTop || 0)}px`);
+    requestAnimationFrame(keepFocusedClubFieldVisible);
+  }
+
+  function keepFocusedClubFieldVisible() {
+    const field = document.activeElement;
+    if (!(field instanceof HTMLElement) || !field.matches('.clubModal input, .clubModal textarea, .clubModal select')) return;
+    const modal = field.closest('.clubModal');
+    if (!modal || !modal.parentElement?.classList.contains('open')) return;
+
+    const viewport = window.visualViewport;
+    const viewportTop = viewport?.offsetTop || 0;
+    const viewportBottom = viewportTop + (viewport?.height || innerHeight);
+    const fieldBounds = field.getBoundingClientRect();
+    const modalBounds = modal.getBoundingClientRect();
+    const safeTop = Math.max(modalBounds.top + 18, viewportTop + 18);
+    const safeBottom = Math.min(modalBounds.bottom - 18, viewportBottom - 18);
+
+    if (fieldBounds.top < safeTop || fieldBounds.bottom > safeBottom) {
+      const targetTop = modal.scrollTop + fieldBounds.top - modalBounds.top - Math.max(18, (modal.clientHeight - field.offsetHeight) / 2);
+      modal.scrollTo({ top: Math.max(0, targetTop), behavior: 'auto' });
+    }
   }
 
   function setModalOpen(id, open) {
@@ -755,6 +776,12 @@
   window.addEventListener('resize', syncVisualViewport, { passive: true });
   window.visualViewport?.addEventListener('resize', syncVisualViewport, { passive: true });
   window.visualViewport?.addEventListener('scroll', syncVisualViewport, { passive: true });
+  document.addEventListener('focusin', event => {
+    if (!event.target.matches?.('.clubModal input, .clubModal textarea, .clubModal select')) return;
+    requestAnimationFrame(keepFocusedClubFieldVisible);
+    setTimeout(keepFocusedClubFieldVisible, 120);
+    setTimeout(keepFocusedClubFieldVisible, 300);
+  });
 
   function initializeMembershipFlow() {
     syncVisualViewport();

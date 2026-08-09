@@ -1,7 +1,10 @@
 .clubModal{
   width:min(430px,calc(var(--club-vv-width,100vw) - 24px));
-  max-height:min(760px,calc(100dvh - 24px));
+  max-height:min(760px,calc(var(--club-vv-height,100dvh) - 24px));
   overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scroll-padding:18px 0 26px;
   border-color:rgba(201,162,87,.66)!important;
   background:
     linear-gradient(rgba(15,10,7,.96),rgba(8,6,4,.98)),
@@ -138,12 +141,12 @@
 #heroChatButton.guestChatButton{white-space:normal!important;max-width:132px;line-height:1.15!important}
 
 @media(max-width:620px){
-  #clubWelcomeModal,#clubGateModal,#clubReturningModal,#clubCreateModal,#glyphPasswordModal{left:var(--club-vv-left,0)!important;right:auto!important;top:var(--club-vv-top,0)!important;bottom:auto!important;width:var(--club-vv-width,100vw)!important;height:var(--club-vv-height,100dvh)!important;padding:9px!important}
+  #clubWelcomeModal,#clubGateModal,#clubReturningModal,#clubCreateModal,#glyphPasswordModal{left:var(--club-vv-left,0)!important;right:auto!important;top:var(--club-vv-top,0)!important;bottom:auto!important;box-sizing:border-box!important;width:var(--club-vv-width,100vw)!important;height:var(--club-vv-height,100dvh)!important;padding:9px!important;align-items:flex-start!important;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
   .tabs{width:100%!important;overflow:hidden!important;justify-content:space-evenly!important}
   .tabs>.tab:not([hidden]){flex:1 1 0!important;min-width:0!important;padding-left:3px!important;padding-right:3px!important}
   .toolbar{width:100%!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important}
   .toolbar .control{width:100%!important;min-width:0!important;max-width:100%!important}
-  .clubModal{width:calc(var(--club-vv-width,100vw) - 18px);padding:20px 17px!important}
+  .clubModal{width:calc(var(--club-vv-width,100vw) - 18px);max-height:calc(var(--club-vv-height,100dvh) - 18px);margin-block:auto;padding:20px 17px!important}
   .clubWelcomeMark{width:66px;height:61px}
   .clubWelcome h3,.clubStep h3{font-size:29px}
   .clubWelcomeName{font-size:24px}
