@@ -5,6 +5,7 @@ const json = (body: unknown, status=200) => new Response(JSON.stringify(body), {
 const cleanBase=(value:string)=>value.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9]+/g,"_").replace(/^_+|_+$/g,"").slice(0,30)||"singer";
 const ilikeLiteral=(value:string)=>value.replace(/[\\%_]/g,match=>`\\${match}`);
 const shape=(p:any)=>({id:p.id,username:p.username,name:p.display_name,isAdmin:!!p.is_admin,lastSeen:p.last_seen});
+const validHash=(value:unknown)=>typeof value==="string"&&/^[0-9a-f]{64}$/i.test(value);
 
 Deno.serve(async(req)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
@@ -45,9 +46,33 @@ Deno.serve(async(req)=>{
   }
   if(body.action==="set_password"){const id=String(body.profileId||""),{data:profile,error}=await admin.from("karaoke_profiles").select("id,password_hash").eq("id",id).maybeSingle();if(error)throw error;if(!profile)return json({error:"Account not found"},404);if(profile.password_hash&&body.currentPasswordHash!==profile.password_hash)return json({error:"Current password does not match"},401);const next=body.newPasswordHash?String(body.newPasswordHash):null;const {error:updateError}=await admin.from("karaoke_profiles").update({password_hash:next,last_seen:new Date().toISOString()}).eq("id",id);if(updateError)throw updateError;return json({status:"ok",protected:!!next});}
   if(body.action==="update_display_name"){const id=String(body.profileId||""),displayName=String(body.displayName||"").trim();if(!displayName||displayName.length>40)return json({error:"Enter a display name up to 40 characters"},400);const {data:profile,error}=await admin.from("karaoke_profiles").select("id,password_hash").eq("id",id).maybeSingle();if(error)throw error;if(!profile)return json({error:"Account not found"},404);if(profile.password_hash&&body.passwordHash!==profile.password_hash)return json({error:"Current password does not match"},401);const {data:updated,error:updateError}=await admin.from("karaoke_profiles").update({display_name:displayName,last_seen:new Date().toISOString()}).eq("id",id).select("id,username,display_name,is_admin,last_seen").single();if(updateError)throw updateError;return json({status:"ok",profile:shape(updated)});}
+  if(body.action==="lookup_profile"){
+   const username=String(body.username||body.input||"").trim();
+   if(!username||username.length>40)return json({error:"Enter a BCDKC ID up to 40 characters"},400);
+   const {data,error}=await admin.from("karaoke_profiles").select("id,username,display_name,password_hash,is_admin,last_seen").ilike("username",ilikeLiteral(username)).limit(20);
+   if(error)throw error;
+   const profile=data?.find((item:any)=>item.username.toLocaleLowerCase()===username.toLocaleLowerCase());
+   return json(profile?{found:true,requiresPassword:!!profile.password_hash,profile:shape(profile)}:{found:false});
+  }
+  if(body.action==="create_profile"){
+   const username=String(body.username||"").trim(),displayName=String(body.displayName||username).trim(),passwordHash=body.passwordHash;
+   if(!username||username.length>40)return json({error:"Choose a BCDKC ID up to 40 characters"},400);
+   if(!displayName||displayName.length>40)return json({error:"Enter a display name up to 40 characters"},400);
+   if(passwordHash!==null&&passwordHash!==undefined&&passwordHash!==""&&!validHash(passwordHash))return json({error:"That password could not be saved"},400);
+   const usernameTaken=async(candidate:string)=>{const {data,error}=await admin.from("karaoke_profiles").select("username").ilike("username",ilikeLiteral(candidate)).limit(20);if(error)throw error;return !!data?.some((item:any)=>item.username.toLocaleLowerCase()===candidate.toLocaleLowerCase());};
+   if(await usernameTaken(username)){
+    const base=cleanBase(username).slice(0,37),suggestions:string[]=[];
+    for(let number=2;number<100&&suggestions.length<3;number++){const candidate=`${base}${number}`.slice(0,40);if(!(await usernameTaken(candidate)))suggestions.push(candidate);}
+    return json({error:"That BCDKC ID is already taken",code:"username_taken",suggestions},409);
+   }
+   const {data,error}=await admin.from("karaoke_profiles").insert({id:crypto.randomUUID(),username,display_name:displayName,password_hash:validHash(passwordHash)?String(passwordHash):null,is_admin:false,last_seen:new Date().toISOString()}).select("id,username,display_name,is_admin,last_seen").single();
+   if(error?.code==="23505")return json({error:"That BCDKC ID is already taken",code:"username_taken",suggestions:[]},409);
+   if(error)throw error;
+   return json({status:"created",profile:shape(data)});
+  }
   const entered=String(body.input||"").trim();if(!entered||entered.length>40)return json({error:"Enter an account name"},400);
   const {data:matches,error:lookupError}=await admin.from("karaoke_profiles").select("id,username,display_name,password_hash,is_admin,last_seen").ilike("username",ilikeLiteral(entered)).limit(20);if(lookupError)throw lookupError;
   const existing=matches?.find((profile:any)=>profile.username.toLocaleLowerCase()===entered.toLocaleLowerCase());if(existing){if(existing.password_hash&&!body.passwordHash)return json({status:"password_required",profile:shape(existing)});if(existing.password_hash&&body.passwordHash!==existing.password_hash)return json({error:"That password does not match"},401);const {data:updated,error:updateError}=await admin.from("karaoke_profiles").update({last_seen:new Date().toISOString()}).eq("id",existing.id).select("id,username,display_name,password_hash,is_admin,last_seen").single();if(updateError)throw updateError;return json({status:"ok",profile:shape(updated)});}
-  const base=cleanBase(entered);for(let number=1;number<1000;number++){const username=`${base}_${String(number).padStart(2,"0")}`,id=crypto.randomUUID();const {data,error}=await admin.from("karaoke_profiles").insert({id,username,display_name:entered,is_admin:base==="felix",last_seen:new Date().toISOString()}).select("id,username,display_name,is_admin,last_seen").single();if(!error)return json({status:"created",profile:shape(data)});if(error.code!=="23505")throw error;}return json({error:"Could not create a unique account name"},409);
+  const base=cleanBase(entered);for(let number=1;number<1000;number++){const username=`${base}_${String(number).padStart(2,"0")}`,id=crypto.randomUUID();const {data,error}=await admin.from("karaoke_profiles").insert({id,username,display_name:entered,is_admin:false,last_seen:new Date().toISOString()}).select("id,username,display_name,is_admin,last_seen").single();if(!error)return json({status:"created",profile:shape(data)});if(error.code!=="23505")throw error;}return json({error:"Could not create a unique account name"},409);
  }catch(error){console.error(error);return json({error:"Profile service unavailable"},500);}
 });

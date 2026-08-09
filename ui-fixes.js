@@ -1,16 +1,39 @@
 (function () {
   const nativeMenuRender = window.renderDrinkMenu;
   const nativeProfileRender = window.renderProfile;
+  const photoRevealDelay = 350;
+  let photoOpenRequest = 0;
+
   function openDrinkPhoto(id) {
     const drink = activeDrinkMenu().drinks.find(item => item.id === id), modal = document.getElementById('drinkPhotoModal');
     if (!drink?.image || !modal) return;
+    const request = ++photoOpenRequest;
+    const startedAt = performance.now();
+    const preload = new Image();
+
     ['onpointerup', 'onpointercancel', 'onpointerleave'].forEach(name => modal.removeAttribute(name));
     modal.querySelector('h3').textContent = drink.name;
-    modal.querySelector('img').src = drink.image;
     const description = modal.querySelector('.drinkPhotoDescription'); if (description) description.textContent = drink.description;
-    setTimeout(() => modal.classList.add('open'), 0);
+    preload.onload = async () => {
+      try { await preload.decode?.(); } catch (_) { /* The loaded image is still safe to display. */ }
+      const remainingDelay = Math.max(0, photoRevealDelay - (performance.now() - startedAt));
+      setTimeout(() => {
+        if (request !== photoOpenRequest) return;
+        modal.querySelector('img').src = drink.image;
+        modal.classList.add('open');
+      }, remainingDelay);
+    };
+    preload.onerror = () => {
+      if (request === photoOpenRequest) toast('This drink photo could not be loaded');
+    };
+    preload.src = drink.image;
   }
   window.showDrinkPhoto = openDrinkPhoto;
+  const nativeHideDrinkPhoto = window.hideDrinkPhoto;
+  window.hideDrinkPhoto = () => {
+    photoOpenRequest++;
+    nativeHideDrinkPhoto?.();
+  };
   window.renderDrinkMenu = () => {
     document.querySelector('.menuIntro #savedMenuControls')?.remove();
     nativeMenuRender();
