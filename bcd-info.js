@@ -44,7 +44,7 @@
 
   function install() {
     document.head.insertAdjacentHTML('beforeend', `<style id="bcd-info-styles">
-      .headerActions{display:flex!important;align-items:center;gap:7px}
+      .headerActions{display:flex!important;align-items:center;gap:7px}.headerActions #userBtn{display:none!important}
       .aboutVenueButton{width:42px;height:36px;padding:0;display:grid;place-items:center;border:1px solid rgba(199,164,91,.55);border-radius:3px;background:linear-gradient(#2c2117,#19130e);color:#e6c47d;font:600 20px/1 Georgia,serif;box-shadow:none;transition:border-color .18s ease,color .18s ease,background .18s ease}
       .aboutVenueButton:hover,.aboutVenueButton:focus-visible{border-color:var(--brass);color:#f4e9d6;background:linear-gradient(#342619,#1b140e);box-shadow:none;outline:none}
       .bcdInfoModal{background:rgba(4,3,3,.8)}
