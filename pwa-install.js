@@ -15,6 +15,14 @@ if (!document.getElementById('bcd-info-script')) {
   const isInstalled = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
+  function applyStandaloneLayout() {
+    const standalone = isInstalled();
+    document.documentElement.classList.toggle('pwa-standalone', standalone);
+    document.body?.classList.toggle('pwa-standalone', standalone);
+    if (document.getElementById('pwa-safe-area-styles')) return;
+    document.head.insertAdjacentHTML('beforeend', '<style id="pwa-safe-area-styles">html.pwa-standalone{background:#0c0907}html.pwa-standalone .topbar{padding-top:env(safe-area-inset-top,0px)}@media(display-mode:standalone){.topbar{padding-top:env(safe-area-inset-top,0px)}}</style>');
+  }
+
   function installedState() {
     document.querySelectorAll(installSelector).forEach(button => {
       button.textContent = 'BCDKC Installed';
@@ -146,6 +154,7 @@ if (!document.getElementById('bcd-info-script')) {
   window.addEventListener('DOMContentLoaded', () => {
     connectProfileCookie();
     rememberProfile(currentUser?.());
+    applyStandaloneLayout();
     createModal();
     if ('serviceWorker' in navigator && canInstallPwa()) {
       navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Service worker registration failed.', error));
