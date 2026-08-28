@@ -14,6 +14,7 @@ if (!document.getElementById('bcd-info-script')) {
   const canInstallPwa = () => window.isSecureContext || location.hostname === 'localhost';
   const isInstalled = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const canBadgeApp = () => isInstalled() && typeof navigator.setAppBadge === 'function';
 
   function applyStandaloneLayout() {
     const standalone = isInstalled();
@@ -84,10 +85,65 @@ if (!document.getElementById('bcd-info-script')) {
     }
   }
 
+  function unreadChatCount() {
+    const user = currentUser?.();
+    if (!user || activeTab === 'chat' || !Array.isArray(chatMessages)) return 0;
+    const lastRead = (state.chatLastReadAt || {})[user.id] || 0;
+    return chatMessages.filter(message => message.profileId !== user.id && message.createdAt > lastRead).length;
+  }
+
+  function syncAppBadge() {
+    if (!canBadgeApp()) return;
+    const count = unreadChatCount();
+    const operation = count ? navigator.setAppBadge(Math.min(count, 99)) : navigator.clearAppBadge?.();
+    Promise.resolve(operation).catch(() => {});
+  }
+
+  async function requestChatBadgePermission() {
+    if (!canBadgeApp() || !('Notification' in window)) return;
+    const permission = await Notification.requestPermission();
+    if (permission === 'granted') {
+      document.getElementById('bcdkcChatBadgeButton')?.remove();
+      syncAppBadge();
+      toast?.('Chat badge enabled');
+    }
+  }
+
+  function ensureChatBadgeButton() {
+    if (!canBadgeApp() || !('Notification' in window) || Notification.permission !== 'default') return;
+    const actions = document.querySelector('#profileView .profileActions');
+    if (!actions || document.getElementById('bcdkcChatBadgeButton')) return;
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.id = 'bcdkcChatBadgeButton';
+    button.className = 'btn ghost small bcdkcInstallButton';
+    button.textContent = 'Enable Chat Badge';
+    button.title = 'Show unread Karaoke Chat messages on the BCDKC app icon.';
+    button.addEventListener('click', requestChatBadgePermission);
+    actions.append(button);
+  }
+
+  function connectUnreadBadge() {
+    const nativeUpdateChatUnread = window.updateChatUnread;
+    if (typeof nativeUpdateChatUnread !== 'function' || nativeUpdateChatUnread.bcdkcBadgeConnected) return;
+    const updateWithAppBadge = function () {
+      const result = nativeUpdateChatUnread.apply(this, arguments);
+      syncAppBadge();
+      return result;
+    };
+    updateWithAppBadge.bcdkcBadgeConnected = true;
+    window.updateChatUnread = updateWithAppBadge;
+    syncAppBadge();
+  }
+
   function ensureInstallButton() {
     if (!currentUser?.() || currentUser().guest) return;
     const actions = document.querySelector('#profileView .profileActions');
-    if (!actions || actions.querySelector(installSelector)) return;
+    if (!actions) return;
+    if (actions.querySelector(installSelector)) {
+      ensureChatBadgeButton();
+      return;
+    }
     const button = document.createElement('button');
     button.type = 'button';
     button.id = 'bcdkcInstallButton';
@@ -98,6 +154,7 @@ if (!document.getElementById('bcd-info-script')) {
     button.addEventListener('click', requestInstall);
     actions.append(button);
     if (isInstalled()) installedState();
+    ensureChatBadgeButton();
   }
 
   function guidance() {
@@ -155,6 +212,7 @@ if (!document.getElementById('bcd-info-script')) {
     connectProfileCookie();
     rememberProfile(currentUser?.());
     applyStandaloneLayout();
+    connectUnreadBadge();
     createModal();
     if ('serviceWorker' in navigator && canInstallPwa()) {
       navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Service worker registration failed.', error));
