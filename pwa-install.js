@@ -10,6 +10,7 @@ if (!document.getElementById('bcd-info-script')) {
 
   let deferredPrompt = null;
   const installSelector = '#bcdkcInstallButton';
+  const profileCookieName = 'bcdkc_last_profile';
   const canInstallPwa = () => window.isSecureContext || location.hostname === 'localhost';
   const isInstalled = () => window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
   const isIos = () => /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
@@ -21,6 +22,58 @@ if (!document.getElementById('bcd-info-script')) {
       button.setAttribute('aria-disabled', 'true');
       button.title = 'Behind Closed Doors Karaoke Club is installed.';
     });
+  }
+
+  function profileCookie() {
+    const prefix = `${profileCookieName}=`;
+    const item = document.cookie.split('; ').find(value => value.startsWith(prefix));
+    if (!item) return null;
+    try { return decodeURIComponent(item.slice(prefix.length)); }
+    catch { return null; }
+  }
+
+  function rememberProfile(user) {
+    const username = user?.username;
+    if (!username) return;
+    const secure = location.protocol === 'https:' ? '; Secure' : '';
+    document.cookie = `${profileCookieName}=${encodeURIComponent(username)}; Max-Age=2592000; Path=/; SameSite=Lax${secure}`;
+  }
+
+  function forgetProfile() {
+    document.cookie = `${profileCookieName}=; Max-Age=0; Path=/; SameSite=Lax`;
+  }
+
+  async function restoreCookieSession() {
+    const username = profileCookie();
+    if (!username || currentUser?.()) return;
+    try {
+      const result = await sharedProfile(username);
+      // Password-protected accounts deliberately require the password again.
+      if (result.status !== 'ok' || !result.profile) return;
+      const user = rememberSharedProfile(result.profile, false);
+      state.currentUserId = user.id;
+      saveState();
+      renderActive();
+    } catch (error) {
+      console.warn('Could not restore the saved BCDKC profile.', error);
+    }
+  }
+
+  function connectProfileCookie() {
+    const nativeCompleteLogin = window.completeLogin;
+    if (typeof nativeCompleteLogin === 'function') {
+      window.completeLogin = function (user) {
+        rememberProfile(user);
+        return nativeCompleteLogin.apply(this, arguments);
+      };
+    }
+    const nativeLogout = window.logout;
+    if (typeof nativeLogout === 'function') {
+      window.logout = function () {
+        forgetProfile();
+        return nativeLogout.apply(this, arguments);
+      };
+    }
   }
 
   function ensureInstallButton() {
@@ -91,11 +144,13 @@ if (!document.getElementById('bcd-info-script')) {
   window.addEventListener('appinstalled', () => { deferredPrompt = null; installedState(); });
 
   window.addEventListener('DOMContentLoaded', () => {
+    connectProfileCookie();
     createModal();
     if ('serviceWorker' in navigator && canInstallPwa()) {
       navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Service worker registration failed.', error));
     }
     ensureInstallButton();
+    restoreCookieSession();
     new MutationObserver(ensureInstallButton).observe(document.getElementById('profileView'), { childList: true, subtree: true });
   });
 
