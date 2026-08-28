@@ -374,7 +374,7 @@
     setStatus('clubReturningStatus', 'Opening the door…');
     try {
       const credentialHash = await hashPassword(password);
-      const result = await sharedProfile(returningId, credentialHash);
+      const result = await sharedProfile(returningId, credentialHash, await hashPasswordFolded(password));
       rememberLoginMethod(returningId, 'password');
       finishMembership(result.profile, true, credentialHash);
     } catch (error) {
@@ -459,7 +459,7 @@
       const confirmation = document.getElementById('clubCreatePasswordAgain')?.value || '';
       if (password.length > 13) { setStatus('clubCreateStatus', 'Passwords can be no more than 13 characters.'); return; }
       if (password !== confirmation) { setStatus('clubCreateStatus', 'Those passwords do not match.'); document.getElementById('clubCreatePasswordAgain')?.focus(); return; }
-      passwordHash = password ? await hashPassword(password) : null;
+      passwordHash = password ? await hashPasswordFolded(password) : null;
     } else {
       if (!createdGlyph) { setStatus('clubCreateStatus', 'Create and confirm your four-point glyph first.'); window.openCreateGlyph(); return; }
       glyphHash = await hashPassword(`glyph:${createdGlyph}`);
