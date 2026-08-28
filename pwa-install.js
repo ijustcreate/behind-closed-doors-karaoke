@@ -1,7 +1,7 @@
 if (!document.getElementById('bcd-info-script')) {
   const bcdInfoScript = document.createElement('script');
   bcdInfoScript.id = 'bcd-info-script';
-  bcdInfoScript.src = 'bcd-info.js?v=20260830';
+  bcdInfoScript.src = 'bcd-info.js?v=20260828-venue-scene';
   document.head.append(bcdInfoScript);
 }
 
