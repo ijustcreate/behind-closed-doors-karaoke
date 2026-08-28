@@ -1,0 +1,68 @@
+(function () {
+  'use strict';
+
+  const address = '2041 Pacific Ave, Stockton, CA 95204';
+  const mapsUrl = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address);
+  let previouslyFocused;
+
+  function closeAboutBCD() {
+    const modal = document.getElementById('bcdInfoModal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    document.removeEventListener('keydown', handleKeydown);
+    previouslyFocused?.focus?.();
+  }
+
+  function handleKeydown(event) {
+    if (event.key === 'Escape') closeAboutBCD();
+  }
+
+  function openAboutBCD() {
+    const modal = document.getElementById('bcdInfoModal');
+    if (!modal) return;
+    previouslyFocused = document.activeElement;
+    modal.classList.add('open');
+    document.addEventListener('keydown', handleKeydown);
+    modal.querySelector('.bcdInfoClose')?.focus();
+  }
+
+  async function copyVenueAddress() {
+    try {
+      await navigator.clipboard.writeText(address);
+    } catch (error) {
+      const field = document.createElement('textarea');
+      field.value = address;
+      field.setAttribute('readonly', '');
+      field.style.position = 'fixed';
+      field.style.opacity = '0';
+      document.body.append(field);
+      field.select();
+      document.execCommand('copy');
+      field.remove();
+    }
+    window.toast?.('Address copied to your pocket');
+  }
+
+  function install() {
+    document.head.insertAdjacentHTML('beforeend', `<style id="bcd-info-styles">
+      .headerActions{display:flex;align-items:center;gap:8px}.aboutVenueButton{width:42px;height:42px;padding:0;display:grid;place-items:center;border:1px solid rgba(201,162,87,.7);border-radius:3px;background:linear-gradient(145deg,#24170f,#100c09);color:#e5c575;font:500 25px/1 Georgia,serif;box-shadow:inset 0 0 0 1px rgba(0,0,0,.45);transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease}.aboutVenueButton:hover,.aboutVenueButton:focus-visible{border-color:#efd18b;color:#fff0c4;transform:translateY(-1px);box-shadow:0 0 18px rgba(201,162,87,.17),inset 0 0 0 1px rgba(0,0,0,.45);outline:none}.bcdInfoModal{background:rgba(4,3,3,.8)}.bcdInfoModal .modal{position:relative;width:min(550px,100%);padding:0;overflow:hidden;background:linear-gradient(145deg,#29150f,#100b09 62%,#160d0a);border-color:rgba(214,177,96,.56);box-shadow:0 34px 120px rgba(0,0,0,.72),0 0 48px rgba(111,35,37,.16)}.bcdInfoModal .modal:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(201,162,87,.09),transparent 37%),url('assets/damask.jpg') center/420px;opacity:.2;mix-blend-mode:screen}.bcdInfoTop,.bcdInfoBody{position:relative}.bcdInfoTop{padding:28px 28px 23px;border-bottom:1px solid rgba(201,162,87,.2);background:linear-gradient(90deg,rgba(91,13,20,.78),rgba(37,16,11,.46)),url('assets/brick.jpg') center/480px}.bcdInfoTop:after{content:"?";position:absolute;right:28px;top:16px;color:rgba(236,204,136,.18);font:78px/.9 Georgia,serif}.bcdInfoTop h3{position:relative;margin:7px 0 0;color:#f1d8a0;font:500 clamp(30px,5vw,40px)/1 Georgia,serif}.bcdInfoBody{padding:22px 28px 26px}.bcdInfoBody p{max-width:470px;margin:0;color:#d2bea0;font-size:14px;line-height:1.62}.bcdInfoBody strong{color:#f1d8a0;font-weight:600}.bcdInfoDetail{display:flex;gap:10px;align-items:flex-start;margin:19px 0 4px;padding:13px 0;border-top:1px solid rgba(201,162,87,.17);border-bottom:1px solid rgba(201,162,87,.17);color:#f0dfbd;font:600 14px/1.45 Georgia,serif}.bcdInfoDetail span{color:#d7a94d;font:18px/1 Georgia,serif}.bcdInfoDetail address{font-style:normal}.bcdInfoNight{display:inline-block;margin-top:16px;padding:7px 10px;border:1px solid rgba(201,162,87,.38);background:rgba(91,13,20,.38);color:#edcf8c;font-size:10px;letter-spacing:.14em;text-transform:uppercase}.bcdInfoActions{display:flex;gap:8px;flex-wrap:wrap;margin-top:21px}.bcdInfoActions .btn{min-height:40px;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}.bcdInfoClose{position:absolute;z-index:2;right:12px;top:10px;width:34px;height:34px;border:0;background:transparent;color:#e9c77b;font-size:27px;line-height:1}.bcdInfoClose:hover,.bcdInfoClose:focus-visible{color:#fff2cc;outline:1px solid rgba(232,199,123,.6)}@media(max-width:620px){.headerActions{gap:6px}.aboutVenueButton{width:34px;height:34px;font-size:22px}.bcdInfoTop{padding:24px 20px 20px}.bcdInfoBody{padding:18px 20px 22px}.bcdInfoBody p{font-size:13px}.bcdInfoTop:after{right:21px;font-size:68px}.bcdInfoActions .btn{flex:1;padding:9px 8px;font-size:11px}}@media(prefers-reduced-motion:reduce){.aboutVenueButton{transition:none}}
+    </style>`);
+    document.head.insertAdjacentHTML('beforeend', '<style>.headerActions{display:flex!important}</style>');
+    const actions = document.querySelector('.headerActions');
+    if (actions && !document.getElementById('aboutVenueButton')) {
+      actions.insertAdjacentHTML('afterbegin', '<button id="aboutVenueButton" class="aboutVenueButton" type="button" aria-label="What is Behind Closed Doors?" title="What is BCD?">?</button>');
+      document.getElementById('aboutVenueButton').addEventListener('click', openAboutBCD);
+    }
+    if (!document.getElementById('bcdInfoModal')) {
+      document.body.insertAdjacentHTML('beforeend', `<div id="bcdInfoModal" class="modalWrap bcdInfoModal" role="dialog" aria-modal="true" aria-labelledby="bcdInfoTitle"><section class="modal"><button type="button" class="bcdInfoClose" aria-label="Close venue information">×</button><div class="bcdInfoTop"><div class="eyebrow">A little hard to find. Worth finding.</div><h3 id="bcdInfoTitle">What is BCD?</h3></div><div class="bcdInfoBody"><p><strong>Behind Closed Doors</strong> is a speakeasy tucked behind Seoul Soon Dubu Korean BBQ—an after-hours room for good pours, close conversations, and songs that deserve the mic.</p><div class="bcdInfoDetail"><span>⌖</span><address>${address}</address></div><div class="bcdInfoNight">Karaoke every Thursday night</div><div class="bcdInfoActions"><a class="btn gold" href="${mapsUrl}" target="_blank" rel="noopener noreferrer">Open in Maps ↗</a><button type="button" class="btn ghost" id="copyVenueAddress">Copy address</button></div></div></section></div>`);
+      document.querySelector('.bcdInfoClose').addEventListener('click', closeAboutBCD);
+      document.getElementById('copyVenueAddress').addEventListener('click', copyVenueAddress);
+      document.getElementById('bcdInfoModal').addEventListener('click', (event) => { if (event.target.id === 'bcdInfoModal') closeAboutBCD(); });
+    }
+    window.openAboutBCD = openAboutBCD;
+    window.closeAboutBCD = closeAboutBCD;
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', install);
+  else install();
+})();
