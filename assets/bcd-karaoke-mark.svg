@@ -10,9 +10,9 @@
     <path d="M60 103 9 10H111Z"/>
     <circle cx="60" cy="43" r="11"/>
     <path d="M54 54v20h12V54M60 74v9m-6 0h12"/>
-    <circle cx="34" cy="50" r="5"/>
-    <path d="M39 50V28h12"/>
-    <circle cx="76" cy="50" r="5"/>
-    <path d="M81 50V28h12"/>
+    <circle cx="42" cy="50" r="5"/>
+    <path d="M47 50V31h10"/>
+    <circle cx="78" cy="50" r="5"/>
+    <path d="M83 50V31h10"/>
   </g>
 </svg>
