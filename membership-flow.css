@@ -79,6 +79,8 @@
 .clubGate p{max-width:320px;margin:0 auto 18px!important;color:#cbb895!important;line-height:1.5!important}
 .clubFree{display:inline-block;margin-top:4px;color:#79c4ef;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
 .clubGate .modalActions{justify-content:center}
+.clubGateManualRequest{max-width:340px!important;margin:-5px auto 18px!important;padding:10px 12px!important;border:1px solid rgba(201,162,87,.27);background:rgba(201,162,87,.07);color:#e3cfaa!important;font-size:11px!important;line-height:1.5!important;text-align:left}
+.clubGateManualRequest[hidden]{display:none!important}
 
 .glyphModal{width:min(450px,calc(var(--club-vv-width,100vw) - 16px));max-height:calc(var(--club-vv-height,100dvh) - 12px);overflow:auto;text-align:center;padding:20px 16px 16px!important;background:radial-gradient(circle at 50% 45%,rgba(10,68,103,.22),transparent 42%),linear-gradient(155deg,#100b08 0%,#080706 56%,#030608 100%)!important}
 .glyphModal h3{margin:3px 0 2px;color:#e9d4a7;font:500 27px/1.1 Georgia,serif}

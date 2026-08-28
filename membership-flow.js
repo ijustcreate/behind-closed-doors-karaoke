@@ -258,7 +258,7 @@
     const copy = document.getElementById('clubGateCopy');
     const messages = {
       favorite: ['Save it to your favorites', 'Join the Club to access this feature.'],
-      request: ['Request through the app', 'Join the Club to request songs through the app while Karaoke Host Mode is on.'],
+      request: ['Request through the app', 'Join the Club to request songs through the app while Karaoke Host Mode is on.', 'You can also still grab a book and a piece of paper and hand your request in manually at the end of the bar near the karaoke machine.'],
       chat: ['Karaoke Club Chat?!', 'Join the Club to access Karaoke Chat.'],
       feature: ['Join the Club', 'Join the Club to access this feature.'],
     };
@@ -266,6 +266,11 @@
     pendingMemberAction = itemId || feature === 'chat' ? { type: feature, itemId } : null;
     if (title) title.textContent = selected[0];
     if (copy) copy.textContent = selected[1];
+    const manualRequest = document.getElementById('clubGateManualRequest');
+    if (manualRequest) {
+      manualRequest.hidden = !selected[2];
+      manualRequest.textContent = selected[2] || '';
+    }
     closeMembershipModals();
     setModalOpen('clubGateModal', true);
   };
@@ -697,7 +702,7 @@
       </div>
       <div id="clubGateModal" class="modalWrap" role="dialog" aria-modal="true" aria-labelledby="clubGateTitle">
         <div class="modal clubModal"><button class="modalClose" type="button" onclick="document.getElementById('clubGateModal').classList.remove('open')" aria-label="Close">&times;</button>
-          <div class="clubGate"><div class="clubGateIcon" aria-hidden="true"></div><div class="eyebrow">Members only</div><h3 id="clubGateTitle">Join the Club</h3><p><span id="clubGateCopy">Join the Club to access this feature.</span><br><span class="clubFree">It&rsquo;s free</span></p>
+          <div class="clubGate"><div class="clubGateIcon" aria-hidden="true"></div><div class="eyebrow">Members only</div><h3 id="clubGateTitle">Join the Club</h3><p><span id="clubGateCopy">Join the Club to access this feature.</span><br><span class="clubFree">It&rsquo;s free</span></p><p id="clubGateManualRequest" class="clubGateManualRequest" hidden></p>
             <div class="modalActions"><button class="btn ghost" type="button" onclick="document.getElementById('clubGateModal').classList.remove('open')">Maybe later</button><button class="btn gold" type="button" onclick="continueFromClubGate()">Join the Club</button></div>
           </div>
         </div>

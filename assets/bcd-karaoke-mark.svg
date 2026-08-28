@@ -7,7 +7,7 @@
     </linearGradient>
   </defs>
   <g fill="none" stroke="url(#gold)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M60 7 111 100H9Z"/>
+    <path d="M60 103 9 10H111Z"/>
     <circle cx="60" cy="43" r="11"/>
     <path d="M54 54v20h12V54M60 74v9m-6 0h12"/>
     <circle cx="34" cy="50" r="5"/>

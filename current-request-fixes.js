@@ -53,8 +53,9 @@
     actions.querySelectorAll('button[onclick*="changePassword"]').forEach(button=>{if(button!==password)button.remove()});
     password.textContent=user.passwordHash?(PROFILE_LANGUAGES[language()]?.changePassword||'Change password'):text.password;
     actions.querySelectorAll('button').forEach(button=>{if(button!==password&&button.textContent.trim()===password.textContent.trim())button.remove()});
-    let adminButton=document.getElementById('profileAdminSettingsButton');
-    if(user.isAdmin){if(!adminButton){adminButton=document.createElement('button');adminButton.id='profileAdminSettingsButton';adminButton.type='button';adminButton.className='btn small';adminButton.onclick=openSettings;actions.insertBefore(adminButton,password)}adminButton.textContent='Admin settings'}else adminButton?.remove();
+    // The single Admin settings control belongs in the account header; do not
+    // reinsert a duplicate into this lower profile section.
+    actions.querySelector('#profileAdminSettingsButton')?.remove();
     let color=document.getElementById('profileChatColorButton');
     if(!color){color=document.createElement('button');color.id='profileChatColorButton';color.type='button';color.className='btn small';color.onclick=openChatColorPicker;actions.append(color)}
     color.textContent=text.color;

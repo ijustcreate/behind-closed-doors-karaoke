@@ -16,8 +16,8 @@
     }).formatToParts(new Date());
     const day = parts.find(part => part.type === 'weekday')?.value;
     const hour = Number(parts.find(part => part.type === 'hour')?.value || 0);
-    return (['Thu', 'Fri', 'Sat', 'Sun'].includes(day) && hour >= 19)
-      || (['Fri', 'Sat', 'Sun', 'Mon'].includes(day) && hour < 2);
+    return (['Thu', 'Fri', 'Sat'].includes(day) && hour >= 19)
+      || (['Fri', 'Sat', 'Sun'].includes(day) && hour < 2);
   }
 
   function lanternIsOn() {
@@ -107,7 +107,7 @@
       row.className = 'settingRow lanternSetting';
       status.insertAdjacentElement('afterend', row);
     }
-    row.innerHTML = `<div><strong>Manual lantern override</strong><p>Default schedule: Thursday-Sunday, 7 PM-2 AM. Resets at 5 AM.</p></div><label class="switch"><input id="lanternManualToggle" type="checkbox" ${lanternIsOn() ? 'checked' : ''} onchange="setLanternManual(this.checked)" aria-label="Manual lantern override"><span></span></label>`;
+    row.innerHTML = `<div><strong>Manual lantern override</strong><p>Default schedule: Thursday-Saturday, 7 PM-2 AM. Resets at 5 AM.</p></div><label class="switch"><input id="lanternManualToggle" type="checkbox" ${lanternIsOn() ? 'checked' : ''} onchange="setLanternManual(this.checked)" aria-label="Manual lantern override"><span></span></label>`;
   }
 
   async function syncSharedRoomSettings() {
@@ -310,8 +310,8 @@
         .tab.hasNotification .badgeCount{right:-1px!important;top:0!important}
         #profileView .viewHero{padding-right:116px!important}
         #profileAdminSettingsButton{right:9px!important;top:9px!important;font-size:9px!important;padding:6px 7px!important}
-        #brandName.isExpanded{font-size:clamp(11px,3.65vw,17px)!important;letter-spacing:.02em!important}
-        #brandName.isExpanded .brandExpanded{max-width:calc(100vw - 62px)!important}
+        #brandName.isExpanded{font-size:clamp(11px,3.33vw,15px)!important;letter-spacing:0!important}
+        #brandName.isExpanded .brandExpanded{max-width:calc(100vw - 48px)!important;letter-spacing:0!important}
         .brandrow>.brand>div:last-child{max-width:calc(100% - 60px)!important}
       }
     </style>`);

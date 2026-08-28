@@ -241,14 +241,194 @@
     }
   };
 
-  window.openChatImage = function (src) {
+  let openChatPicture = { src: '', caption: '' };
+
+  function loadCanvasImage(src) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      // Chat uploads are data URLs today. Enable CORS only for a remote image host so
+      // direct file:// use and same-origin deployments keep working too.
+      const sourceUrl = new URL(src, window.location.href);
+      if (sourceUrl.protocol.startsWith('http') && sourceUrl.origin !== window.location.origin) image.crossOrigin = 'anonymous';
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('The picture could not be prepared for download'));
+      image.src = src;
+    });
+  }
+
+  function wrapCanvasText(context, text, maxWidth) {
+    const lines = [];
+    String(text).trim().split(/\n+/).forEach(paragraph => {
+      const words = paragraph.trim().split(/\s+/).filter(Boolean);
+      if (!words.length) return;
+      let line = '';
+      words.forEach(word => {
+        const next = line ? `${line} ${word}` : word;
+        if (line && context.measureText(next).width > maxWidth) {
+          lines.push(line);
+          line = word;
+        } else line = next;
+      });
+      if (line) lines.push(line);
+    });
+    return lines;
+  }
+
+  function fittedCaption(context, caption, maxWidth, maxHeight, width) {
+    const clean = String(caption || '').trim();
+    if (!clean) return null;
+    for (let size = Math.min(42, Math.max(18, Math.round(width * .047))); size >= 16; size -= 2) {
+      context.font = `600 ${size}px ui-sans-serif, system-ui, sans-serif`;
+      const lineHeight = Math.round(size * 1.32);
+      const lines = wrapCanvasText(context, clean, maxWidth);
+      if (lines.length * lineHeight <= maxHeight) return { lines, size, lineHeight };
+    }
+    context.font = '600 16px ui-sans-serif, system-ui, sans-serif';
+    const lines = wrapCanvasText(context, clean, maxWidth);
+    const lineHeight = 22;
+    const limit = Math.max(1, Math.floor(maxHeight / lineHeight));
+    if (lines.length > limit) {
+      lines.length = limit;
+      let finalLine = lines[limit - 1];
+      while (finalLine.length && context.measureText(`${finalLine}…`).width > maxWidth) finalLine = finalLine.slice(0, -1).trimEnd();
+      lines[limit - 1] = `${finalLine}…`;
+    }
+    return { lines, size: 16, lineHeight };
+  }
+
+  function drawCornerTrim(context, x, y, horizontal, vertical, length) {
+    const short = length * .42;
+    context.beginPath();
+    context.moveTo(x, y + vertical * short);
+    context.lineTo(x, y);
+    context.lineTo(x + horizontal * short, y);
+    context.moveTo(x + horizontal * length, y);
+    context.lineTo(x + horizontal * length, y + vertical * length * .24);
+    context.moveTo(x, y + vertical * length);
+    context.lineTo(x + horizontal * length * .24, y + vertical * length);
+    context.stroke();
+  }
+
+  async function createBrandedChatImage(src, caption) {
+    const [photo, mark] = await Promise.all([
+      loadCanvasImage(src),
+      loadCanvasImage('assets/bcd-karaoke-mark.svg'),
+    ]);
+    const width = photo.naturalWidth || photo.width;
+    const height = photo.naturalHeight || photo.height;
+    if (!width || !height) throw new Error('The picture has no usable dimensions');
+
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d', { alpha: false });
+    const trim = Math.max(8, Math.min(24, Math.round(width * .024)));
+    const photoX = trim, photoY = trim, photoWidth = width - trim * 2, photoHeight = height - trim * 2;
+    const padding = Math.max(16, Math.min(42, Math.round(width * .048)));
+
+    context.fillStyle = '#120d09';
+    context.fillRect(0, 0, width, height);
+    context.drawImage(photo, photoX, photoY, photoWidth, photoHeight);
+
+    // A restrained espresso-and-brass trim keeps the shared image visibly part of BCDKC.
+    context.strokeStyle = 'rgba(224, 183, 82, .92)';
+    context.lineWidth = Math.max(1, Math.round(width * .002));
+    context.strokeRect(trim * .55, trim * .55, width - trim * 1.1, height - trim * 1.1);
+    context.strokeStyle = 'rgba(255, 226, 154, .44)';
+    context.lineWidth = 1;
+    context.strokeRect(trim + 2, trim + 2, photoWidth - 4, photoHeight - 4);
+    context.strokeStyle = 'rgba(224, 183, 82, .84)';
+    context.lineWidth = Math.max(1, Math.round(width * .0018));
+    const corner = Math.max(20, Math.min(56, Math.round(width * .075)));
+    drawCornerTrim(context, trim + 7, trim + 7, 1, 1, corner);
+    drawCornerTrim(context, width - trim - 7, trim + 7, -1, 1, corner);
+    drawCornerTrim(context, trim + 7, height - trim - 7, 1, -1, corner);
+    drawCornerTrim(context, width - trim - 7, height - trim - 7, -1, -1, corner);
+
+    const captionLayout = fittedCaption(context, caption, photoWidth - padding * 2, Math.min(photoHeight * .28, 190), width);
+    if (captionLayout) {
+      const captionHeight = captionLayout.lines.length * captionLayout.lineHeight + padding * 1.5;
+      const captionFade = context.createLinearGradient(0, photoY, 0, photoY + captionHeight + padding);
+      captionFade.addColorStop(0, 'rgba(7, 5, 4, .78)');
+      captionFade.addColorStop(.74, 'rgba(7, 5, 4, .42)');
+      captionFade.addColorStop(1, 'rgba(7, 5, 4, 0)');
+      context.fillStyle = captionFade;
+      context.fillRect(photoX, photoY, photoWidth, captionHeight + padding);
+      context.font = `600 ${captionLayout.size}px ui-sans-serif, system-ui, sans-serif`;
+      context.fillStyle = '#fffdf8';
+      context.textBaseline = 'top';
+      context.shadowColor = 'rgba(0, 0, 0, .82)';
+      context.shadowBlur = Math.max(3, Math.round(width * .008));
+      context.shadowOffsetY = 2;
+      captionLayout.lines.forEach((line, index) => context.fillText(line, photoX + padding, photoY + padding + index * captionLayout.lineHeight, photoWidth - padding * 2));
+      context.shadowColor = 'transparent';
+      context.shadowBlur = 0;
+      context.shadowOffsetY = 0;
+    }
+
+    const markHeight = Math.max(42, Math.min(96, Math.round(width * .125)));
+    const markWidth = markHeight * (120 / 110);
+    const footerHeight = Math.max(markHeight + padding * 1.2, Math.min(photoHeight * .24, 160));
+    const footerFade = context.createLinearGradient(0, height - trim - footerHeight - padding, 0, height - trim);
+    footerFade.addColorStop(0, 'rgba(7, 5, 4, 0)');
+    footerFade.addColorStop(.36, 'rgba(7, 5, 4, .45)');
+    footerFade.addColorStop(1, 'rgba(7, 5, 4, .86)');
+    context.fillStyle = footerFade;
+    context.fillRect(photoX, height - trim - footerHeight - padding, photoWidth, footerHeight + padding);
+    const markX = photoX + padding;
+    const markY = height - trim - padding - markHeight;
+    context.drawImage(mark, markX, markY, markWidth, markHeight);
+
+    const brandX = markX + markWidth + Math.max(10, Math.round(width * .018));
+    const brandSize = Math.max(21, Math.min(46, Math.round(width * .054)));
+    context.fillStyle = '#f3d997';
+    context.font = `700 ${brandSize}px Georgia, serif`;
+    context.textBaseline = 'alphabetic';
+    context.shadowColor = 'rgba(0, 0, 0, .8)';
+    context.shadowBlur = 5;
+    context.fillText('BCDKC', brandX, markY + markHeight * .55);
+    context.shadowColor = 'transparent';
+    context.shadowBlur = 0;
+    context.fillStyle = '#f8f2df';
+    context.font = `600 ${Math.max(9, Math.round(brandSize * .28))}px ui-sans-serif, system-ui, sans-serif`;
+    context.fillText('BEHIND CLOSED DOORS · KARAOKE CLUB', brandX, markY + markHeight * .78);
+
+    return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('The branded image could not be created')), 'image/jpeg', .92));
+  }
+
+  window.openChatImage = function (src, caption = '') {
     const modal = document.getElementById('chatImageModal');
     if (!modal) return;
+    openChatPicture = { src, caption: String(caption || '').trim() };
     modal.querySelector('img').src = src;
-    modal.querySelector('a').href = src;
     modal.classList.add('open');
   };
   window.closeChatImage = () => document.getElementById('chatImageModal')?.classList.remove('open');
+  window.downloadBrandedChatImage = async function () {
+    const button = document.querySelector('#chatImageModal .chatImageDownload');
+    if (!openChatPicture.src || !button) return;
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.setAttribute('aria-label', 'Preparing BCDKC-branded picture');
+    try {
+      const blob = await createBrandedChatImage(openChatPicture.src, openChatPicture.caption);
+      const href = URL.createObjectURL(blob);
+      const download = document.createElement('a');
+      download.href = href;
+      download.download = `bcdkc-chat-${new Date().toISOString().slice(0, 10)}.jpg`;
+      document.body.append(download);
+      download.click();
+      download.remove();
+      setTimeout(() => URL.revokeObjectURL(href), 1000);
+    } catch (error) {
+      console.warn('Branded chat download failed', error);
+      toast('This picture could not be prepared for download');
+    } finally {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      button.setAttribute('aria-label', 'Download BCDKC-branded picture');
+    }
+  };
 
   function updateComposer() {
     const input = document.getElementById('chatInput'), count = document.getElementById('chatTokenCount');
@@ -329,13 +509,32 @@
       .chatRetentionNote{margin:7px 2px 0;color:#776e62;font:500 9px/1.35 ui-sans-serif,system-ui;text-align:center}.chatAttachments{display:flex!important;gap:6px;min-height:0;margin:0 0 7px!important;padding:0!important;overflow-x:auto}.chatAttachments[hidden]{display:none!important}.chatDraftThumb{position:relative;flex:0 0 46px;width:46px;height:46px;border:1px solid rgba(201,162,87,.38);border-radius:5px;background:#100b08}.chatDraftThumb img{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px}.chatDraftThumb button{position:absolute;right:-5px;top:-6px;display:grid;place-items:center;width:17px;height:17px;padding:0;border:1px solid #c9a257;border-radius:50%;background:#24120f;color:#f5dfb8;font:700 13px/1 ui-sans-serif;cursor:pointer}
       .chatMessage{position:relative}.chatMessage:has(.chatReactionEdge){margin-bottom:12px}.chatMessageImages{display:grid;grid-template-columns:repeat(2,72px);gap:5px;margin-top:7px}.chatMessageImages:not(.multiple){grid-template-columns:112px}.chatImageThumb{display:block;width:72px;height:72px;padding:0;border:1px solid rgba(201,162,87,.32);border-radius:6px;overflow:hidden;background:#0b0806;cursor:pointer}.chatMessageImages:not(.multiple) .chatImageThumb{width:112px;height:96px}.chatImageThumb img{display:block;width:100%;height:100%;object-fit:cover}.chatReactionEdge{position:absolute;right:8px;bottom:-13px;display:flex;gap:3px;z-index:2}.chatMessage.other .chatReactionEdge{right:auto;left:8px}.chatReactionCount{display:flex;align-items:center;gap:2px;height:24px;padding:2px 6px;border:1px solid rgba(201,162,87,.38);border-radius:999px;background:#160f0b;color:#ead7b3;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.45)}.chatReactionCount small{font-size:9px;color:#a9997d}
       .chatActions{position:fixed!important;z-index:1100!important}.chatActions.ownActions{display:grid!important;min-width:220px!important;padding:5px!important;border:1px solid rgba(201,162,87,.72)!important;border-radius:6px!important;background:linear-gradient(145deg,#2b1a11,#100b08)!important;box-shadow:0 16px 42px rgba(0,0,0,.68)!important}.chatActions.ownActions button{padding:11px 12px!important;border:0!important;background:transparent!important;color:#efdbaf!important;text-align:left!important;font:600 12px ui-sans-serif,system-ui!important}.chatActions.ownActions button:hover{background:rgba(201,162,87,.14)!important}.chatActions.reactionActions{display:flex!important;gap:2px!important;padding:6px!important;border:1px solid rgba(201,162,87,.65)!important;border-radius:999px!important;background:#17100c!important;box-shadow:0 14px 36px rgba(0,0,0,.66)!important}.chatActions.reactionActions button{display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:transparent;font-size:22px;cursor:pointer;transition:transform .12s,background .12s}.chatActions.reactionActions button:hover,.chatActions.reactionActions button:focus{transform:scale(1.16);background:rgba(201,162,87,.14);outline:0}
-      .chatEditing{width:min(78%,620px);box-sizing:border-box}.chatEditing textarea{min-height:78px!important;max-height:180px!important;resize:vertical!important}.chatImageModal .modal{display:flex;flex-direction:column;align-items:center;width:min(92vw,760px);max-width:760px}.chatImageModal img{display:block;max-width:100%;max-height:72vh;object-fit:contain;border:1px solid rgba(201,162,87,.4);background:#080604}.chatImageDownload{display:grid!important;place-items:center;width:42px!important;height:42px!important;margin-top:12px!important;padding:0!important}.chatImageDownload svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
+      .chatEditing{width:min(78%,620px);box-sizing:border-box}.chatEditing textarea{min-height:78px!important;max-height:180px!important;resize:vertical!important}.chatImageModal .modal{display:flex;flex-direction:column;align-items:center;width:min(92vw,760px);max-width:760px}.chatImageStage{position:relative;max-width:100%;padding:7px;background:linear-gradient(145deg,#2d1d12,#080604);border:1px solid rgba(224,183,82,.75);box-shadow:0 0 0 1px rgba(255,226,154,.16) inset,0 18px 42px rgba(0,0,0,.52)}.chatImageStage:before,.chatImageStage:after{content:'';position:absolute;width:24px;height:24px;pointer-events:none}.chatImageStage:before{left:3px;top:3px;border-left:1px solid rgba(255,226,154,.78);border-top:1px solid rgba(255,226,154,.78)}.chatImageStage:after{right:3px;bottom:3px;border-right:1px solid rgba(255,226,154,.78);border-bottom:1px solid rgba(255,226,154,.78)}.chatImageModal img{display:block;max-width:100%;max-height:72vh;object-fit:contain;border:1px solid rgba(201,162,87,.4);background:#080604}.chatImageDownload{display:grid!important;place-items:center;width:42px!important;height:42px!important;margin-top:12px!important;padding:0!important}.chatImageDownload:disabled{cursor:wait!important;opacity:.65}.chatImageDownload svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
       @media(max-width:620px){.chatComposeGrid{grid-template-columns:minmax(0,1fr) 56px}.chatSend,.chatPlus{width:56px!important}.chatRetentionNote{font-size:8.5px}.chatMessageImages{grid-template-columns:repeat(2,64px)}.chatImageThumb{width:64px;height:64px}.chatMessageImages:not(.multiple){grid-template-columns:96px}.chatMessageImages:not(.multiple) .chatImageThumb{width:96px;height:84px}.chatActions.reactionActions button{width:34px;height:34px;font-size:20px}}
     </style>`);
     document.getElementById('chatActions')?.remove();
     document.getElementById('chatContext')?.remove();
     if (!document.getElementById('chatImageInput')) document.body.insertAdjacentHTML('beforeend', '<input id="chatImageInput" type="file" accept="image/*" multiple hidden>');
     if (!document.getElementById('chatImageModal')) document.body.insertAdjacentHTML('beforeend', '<div id="chatImageModal" class="modalWrap chatImageModal" onclick="if(event.target===this)closeChatImage()"><div class="modal"><button class="modalClose" aria-label="Close picture" onclick="closeChatImage()">×</button><img alt="Chat picture"><a class="btn gold chatImageDownload" download="karaoke-chat-picture.jpg" aria-label="Download picture"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg></a></div></div>');
+    const chatImageModal = document.getElementById('chatImageModal');
+    const modalImage = chatImageModal?.querySelector('img');
+    if (modalImage && !modalImage.parentElement.classList.contains('chatImageStage')) {
+      const stage = document.createElement('div');
+      stage.className = 'chatImageStage';
+      modalImage.replaceWith(stage);
+      stage.append(modalImage);
+    }
+    const oldDownload = chatImageModal?.querySelector('.chatImageDownload');
+    if (oldDownload?.tagName === 'A') {
+      const downloadButton = document.createElement('button');
+      downloadButton.type = 'button';
+      downloadButton.className = oldDownload.className;
+      downloadButton.setAttribute('aria-label', 'Download BCDKC-branded picture');
+      downloadButton.title = 'Download BCDKC-branded picture';
+      downloadButton.innerHTML = oldDownload.innerHTML;
+      downloadButton.addEventListener('click', window.downloadBrandedChatImage);
+      oldDownload.replaceWith(downloadButton);
+    }
     const fileInput = document.getElementById('chatImageInput');
     fileInput.onchange = async event => {
       const files = Array.from(event.target.files || []).slice(0, 4 - draftImages.length);
@@ -356,6 +555,6 @@
     const article = thumb.closest('[data-chat-id]');
     const message = chatMessages.find(item => item.id === article?.dataset.chatId);
     const src = message?.images?.[Number(thumb.dataset.imageIndex)];
-    if (src) openChatImage(src);
+    if (src) openChatImage(src, message.message);
   });
 })();
