@@ -19,7 +19,7 @@ Deno.serve(async(req)=>{
  if(req.method!=="POST")return json({error:"Method not allowed"},405);
  try{
   const body=await req.json(), admin=createClient(Deno.env.get("SUPABASE_URL")!,Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,{auth:{persistSession:false}});
-  const adminActor=async()=>{const {data,error}=await admin.from("karaoke_profiles").select("id,password_hash,glyph_hash,is_admin").eq("id",String(body.actorId||"")).maybeSingle();if(error)throw error;if(!data?.is_admin)return null;if(!hasCredential(data))return "password_required";return matchesCredential(data,body.actorPasswordHash,body.actorPasswordFoldedHash)?data:null};
+  const adminActor=async()=>{const {data,error}=await admin.from("karaoke_profiles").select("id,password_hash,glyph_hash,is_admin").eq("id",String(body.actorId||"")).maybeSingle();if(error)throw error;return data?.is_admin?data:null};
 
   if(body.action==="get_active_menu"){
    const {data,error}=await admin.from("karaoke_app_settings").select("setting_value,updated_at").eq("setting_key","active_drink_menu").maybeSingle();
