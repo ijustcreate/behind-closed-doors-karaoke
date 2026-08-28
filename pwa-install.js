@@ -145,6 +145,7 @@ if (!document.getElementById('bcd-info-script')) {
 
   window.addEventListener('DOMContentLoaded', () => {
     connectProfileCookie();
+    rememberProfile(currentUser?.());
     createModal();
     if ('serviceWorker' in navigator && canInstallPwa()) {
       navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Service worker registration failed.', error));
