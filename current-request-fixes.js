@@ -176,7 +176,7 @@
   let sharedMenuStamp='';
   window.syncSharedDrinkMenu=async()=>{
     if(menuEditing)return;
-    try{const result=await menuSettingAction('get_active_menu'),menu=result.menu;if(!menu?.name||!Array.isArray(menu.drinks)||result.updatedAt===sharedMenuStamp){ensurePersistentMenuPicker();return}sharedMenuStamp=result.updatedAt||JSON.stringify(menu);state.drinkMenus||={};state.drinkMenus[menu.name]=menu;state.activeDrinkMenu=menu.name;saveState();renderDrinkMenu();renderMenuLibrary();ensurePersistentMenuPicker()}catch(error){console.warn('Live drink menu unavailable',error)}
+    try{const result=await menuSettingAction('get_active_menu'),menu=result.menu,updatedAt=Date.parse(result.updatedAt||'');if(!menu?.name||!Array.isArray(menu.drinks)||result.updatedAt===sharedMenuStamp){ensurePersistentMenuPicker();return}if(Number.isFinite(updatedAt)&&updatedAt<BCD_CURRENT_MENU_PUBLISHED_AT){sharedMenuStamp=result.updatedAt;ensurePersistentMenuPicker();return}sharedMenuStamp=result.updatedAt||JSON.stringify(menu);state.drinkMenus||={};state.drinkMenus[menu.name]=menu;state.activeDrinkMenu=menu.name;saveState();renderDrinkMenu();renderMenuLibrary();ensurePersistentMenuPicker()}catch(error){console.warn('Live drink menu unavailable',error)}
   };
   const nativeSelectDrinkMenu=window.selectDrinkMenu;
   window.selectDrinkMenu=async name=>{
