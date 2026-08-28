@@ -501,7 +501,7 @@
     user.guest = false;
     user.remoteProfile = true;
     user.passwordHash = protectedProfile ? 'REMOTE' : null;
-    if (user.isAdmin && adminCredentialHash) sessionStorage.setItem(`bcd-admin-${user.id}`, adminCredentialHash);
+    if (user.isAdmin && adminCredentialHash) { sessionStorage.setItem(`bcd-admin-${user.id}`, adminCredentialHash); localStorage.setItem(`bcd-admin-${user.id}`, adminCredentialHash); }
     state.currentUserId = user.id;
     saveState();
     closeMembershipModals();
