@@ -49,6 +49,13 @@
       .bcdInfoNight{display:table;margin:-1px auto 0;padding:10px 22px;border:1px solid rgba(224,168,67,.77);border-radius:0 0 8px 8px;background:linear-gradient(100deg,#4b1318,#260b0e);color:#f2ca76;font:600 10px/1 ui-sans-serif,system-ui;letter-spacing:.17em;text-transform:uppercase}.bcdInfoNight:before{content:'♬';margin-right:10px;font-size:15px;vertical-align:-1px}.bcdInfoActions{display:grid;grid-template-columns:1fr 1fr;gap:13px;margin-top:18px}.bcdInfoActions .btn{min-height:46px;display:flex;align-items:center;justify-content:center;border-radius:5px;text-decoration:none;text-transform:uppercase;letter-spacing:.13em;font-size:10px}.bcdInfoActions .gold{border:1px solid #f1cf82;background:linear-gradient(135deg,#e5b858,#a46e23);box-shadow:inset 0 0 0 2px rgba(255,231,171,.2),0 4px 15px rgba(0,0,0,.36);color:#180e07;font-weight:800}.bcdInfoActions .ghost{border:1px solid rgba(219,165,71,.68);background:rgba(18,12,9,.76);color:#efd6a0}.bcdInfoClose{position:absolute;z-index:3;right:14px;top:14px;width:43px;height:43px;padding:0;border:1px solid rgba(235,187,96,.74);border-radius:50%;background:rgba(10,8,6,.66);color:#f4d49a;font:300 31px/1 ui-sans-serif,system-ui;box-shadow:0 7px 23px rgba(0,0,0,.5)}.bcdInfoClose:hover,.bcdInfoClose:focus-visible{background:#34190e;border-color:#f5d28a;outline:none}
       @media(max-width:700px){.bcdInfoModal{padding:8px}.bcdInfoModal .modal{border-radius:11px}.bcdInfoFeature{min-height:225px}.bcdInfoCopy{padding:15px 17px}.bcdInfoMark{width:28px;height:27px;margin-bottom:5px}.bcdInfoCopy h3{font-size:31px}.bcdInfoKicker{margin-top:7px;font-size:8px;line-height:1.35;letter-spacing:.13em}.bcdInfoRule{margin:9px 0 10px}.bcdInfoStory{font-size:10.5px;line-height:1.32}.bcdInfoStory br{margin-top:4px}.bcdInfoScene{min-height:225px;background-position:center 47%}.bcdInfoDetails{padding:11px 13px 13px}.bcdInfoAddress{gap:9px;padding:10px;font-size:13px}.bcdInfoAddressIcon{width:30px;height:30px;font-size:16px}.bcdInfoHours{margin-top:12px;padding:12px 10px}.bcdInfoHours h4{margin-bottom:8px;font-size:9px}.bcdInfoHourGrid{gap:0 10px}.bcdInfoHourList+.bcdInfoHourList{padding-left:10px}.bcdInfoHourList dt,.bcdInfoHourList dd{padding:3px 0;font-size:9px}.bcdInfoNight{padding:8px 10px;font-size:8px;letter-spacing:.1em}.bcdInfoActions{gap:9px;margin-top:14px}.bcdInfoActions .btn{min-height:40px;font-size:8px}.bcdInfoClose{right:10px;top:10px;width:38px;height:38px;font-size:28px}}@media(max-width:420px){.bcdInfoFeature{grid-template-columns:1fr}.bcdInfoScene{min-height:195px}.bcdInfoActions{grid-template-columns:1fr}.bcdInfoHourList dt,.bcdInfoHourList dd{font-size:9px}}
     </style>`);
+    document.head.insertAdjacentHTML('beforeend', `<style id="bcd-info-refinements">
+      .bcdInfoFeature{grid-template-columns:1.12fr .88fr;overflow:hidden}
+      .bcdInfoScene{margin-left:-64px;background-position:36% center;mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.28) 20%,#000 47%,#000 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.28) 20%,#000 47%,#000 100%)}
+      .bcdInfoScene:after{background:linear-gradient(90deg,rgba(19,9,8,.74),rgba(12,7,6,.2) 48%,transparent)}
+      .bcdInfoNight{margin:14px auto 0;border-radius:8px}
+      @media(max-width:700px){.bcdInfoScene{margin-left:-46px;background-position:32% center}.bcdInfoNight{margin-top:11px}}
+    </style>`);
 
     const actions = document.querySelector('.headerActions');
     if (actions && !document.getElementById('aboutVenueButton')) {
@@ -62,6 +69,11 @@
       document.getElementById('copyVenueAddress').addEventListener('click', copyAddress);
       document.getElementById('bcdInfoModal').addEventListener('click', event => { if (event.target.id === 'bcdInfoModal') closeAboutBCD(); });
     }
+    const kicker = document.querySelector('.bcdInfoKicker');
+    if (kicker) kicker.innerHTML = 'AN UPSCALE SPEAKEASY<br>IN THE HEART OF<br>THE MIRACLE MILE';
+    const story = document.querySelector('.bcdInfoStory');
+    if (story) story.innerHTML = '<strong>Behind Closed Doors</strong><br>is a speakeasy tucked behind<br>Seoul Soon Dubu Korean BBQ.<br>An after-hours mixologist cocktail bar<br>known for delicious drinks, close conversations, and songs that<br>deserve the mic.';
+
     window.openAboutBCD = openAboutBCD;
   }
 
