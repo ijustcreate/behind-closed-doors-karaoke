@@ -51,10 +51,10 @@
     </style>`);
     document.head.insertAdjacentHTML('beforeend', `<style id="bcd-info-refinements">
       .bcdInfoFeature{grid-template-columns:1.12fr .88fr;overflow:hidden}
-      .bcdInfoScene{margin-left:-64px;background-position:36% center;mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.28) 20%,#000 47%,#000 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.28) 20%,#000 47%,#000 100%)}
-      .bcdInfoScene:after{background:linear-gradient(90deg,rgba(19,9,8,.74),rgba(12,7,6,.2) 48%,transparent)}
+      .bcdInfoScene{margin-left:-118px;background-position:25% center;mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.42) 12%,#000 29%,#000 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.42) 12%,#000 29%,#000 100%)}
+      .bcdInfoScene:after{background:linear-gradient(90deg,rgba(19,9,8,.7),rgba(12,7,6,.16) 43%,transparent)}
       .bcdInfoNight{margin:14px auto 0;border-radius:8px}
-      @media(max-width:700px){.bcdInfoScene{margin-left:-46px;background-position:32% center}.bcdInfoNight{margin-top:11px}}
+      @media(max-width:700px){.bcdInfoScene{margin-left:-86px;background-position:20% center}.bcdInfoNight{margin-top:11px}}
     </style>`);
 
     const actions = document.querySelector('.headerActions');
