@@ -52,11 +52,12 @@
     document.head.insertAdjacentHTML('beforeend', `<style id="bcd-info-refinements">
       .bcdInfoFeature{grid-template-columns:1.12fr .88fr;overflow:hidden}
       .bcdInfoCopy{position:relative;z-index:2;isolation:isolate;box-shadow:30px 0 44px rgba(17,8,7,.62)}
+      .bcdInfoKicker span,.bcdInfoStory .bcdInfoLine{display:block;white-space:nowrap}
       .bcdInfoAddress{justify-content:center}.bcdInfoAddressIcon{position:absolute;left:18px}.bcdInfoAddress address{text-align:center}
       .bcdInfoScene{margin-left:-118px;background-position:25% center;mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.42) 12%,#000 29%,#000 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.42) 12%,#000 29%,#000 100%)}
       .bcdInfoScene{z-index:1}.bcdInfoScene:after{background:linear-gradient(90deg,rgba(19,9,8,.76),rgba(12,7,6,.2) 43%,transparent)}
       .bcdInfoNight{margin:14px auto 0;border-radius:8px}
-      @media(max-width:700px){.bcdInfoScene{margin-left:-86px;background-position:20% center}.bcdInfoAddressIcon{left:10px}.bcdInfoNight{margin-top:11px}}
+      @media(max-width:700px){.bcdInfoFeature{grid-template-columns:1.24fr .76fr}.bcdInfoScene{margin-left:-86px;background-position:20% center}.bcdInfoKicker{font-size:7.5px;letter-spacing:.115em}.bcdInfoStory{font-size:9.4px;line-height:1.42}.bcdInfoAddressIcon{left:10px}.bcdInfoNight{margin-top:11px}}
     </style>`);
 
     const actions = document.querySelector('.headerActions');
@@ -72,9 +73,9 @@
       document.getElementById('bcdInfoModal').addEventListener('click', event => { if (event.target.id === 'bcdInfoModal') closeAboutBCD(); });
     }
     const kicker = document.querySelector('.bcdInfoKicker');
-    if (kicker) kicker.innerHTML = 'AN UPSCALE SPEAKEASY<br>IN THE HEART OF<br>THE MIRACLE MILE';
+    if (kicker) kicker.innerHTML = '<span>AN UPSCALE SPEAKEASY</span><span>IN THE HEART OF</span><span>THE MIRACLE MILE</span>';
     const story = document.querySelector('.bcdInfoStory');
-    if (story) story.innerHTML = '<strong>Behind Closed Doors</strong><br>is a speakeasy tucked behind<br>Seoul Soon Dubu Korean BBQ.<br>An after-hours mixologist cocktail bar<br>known for delicious drinks, close conversations, and songs that<br>deserve the mic.';
+    if (story) story.innerHTML = '<strong class="bcdInfoLine">Behind Closed Doors</strong><span class="bcdInfoLine">is a speakeasy tucked behind</span><span class="bcdInfoLine">Seoul Soon Dubu Korean BBQ.</span><span class="bcdInfoLine">An after-hours mixologist cocktail bar</span><span class="bcdInfoLine">known for delicious drinks, close conversations,</span><span class="bcdInfoLine">and songs that deserve the mic.</span>';
 
     window.openAboutBCD = openAboutBCD;
   }
