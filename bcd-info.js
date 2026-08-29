@@ -51,8 +51,9 @@
     </style>`);
     document.head.insertAdjacentHTML('beforeend', `<style id="bcd-info-refinements">
       .bcdInfoFeature{grid-template-columns:1.12fr .88fr;overflow:hidden}
+      .bcdInfoCopy{position:relative;z-index:2;isolation:isolate;box-shadow:30px 0 44px rgba(17,8,7,.62)}
       .bcdInfoScene{margin-left:-118px;background-position:25% center;mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.42) 12%,#000 29%,#000 100%);-webkit-mask-image:linear-gradient(90deg,transparent 0%,rgba(0,0,0,.42) 12%,#000 29%,#000 100%)}
-      .bcdInfoScene:after{background:linear-gradient(90deg,rgba(19,9,8,.7),rgba(12,7,6,.16) 43%,transparent)}
+      .bcdInfoScene{z-index:1}.bcdInfoScene:after{background:linear-gradient(90deg,rgba(19,9,8,.76),rgba(12,7,6,.2) 43%,transparent)}
       .bcdInfoNight{margin:14px auto 0;border-radius:8px}
       @media(max-width:700px){.bcdInfoScene{margin-left:-86px;background-position:20% center}.bcdInfoNight{margin-top:11px}}
     </style>`);
