@@ -75,8 +75,8 @@
     .breakTheIcePrompt>span:first-child{flex:0 0 auto;color:#e2b85e;font:27px/1 Georgia,serif}
     .breakTheIcePrompt:hover,.breakTheIcePrompt:focus-visible{transform:translateY(-1px);border-color:#edca81;background:linear-gradient(135deg,rgba(118,21,31,.92),rgba(65,15,18,.95));outline:0}
     .chatPanel .whoHere{grid-row:1/4}
-    @media(max-width:760px){.chatPanel .breakTheIceTray{margin:8px 0}.chatPanel .whoHere{grid-row:auto}.breakTheIcePrompts{gap:6px}.breakTheIcePrompt{flex-direction:column;align-items:flex-start;justify-content:center;gap:3px;min-height:68px;padding:8px;font-size:10px}.breakTheIcePrompt>span:first-child{font-size:24px}}
-    @media(max-width:430px){.breakTheIcePrompts{grid-template-columns:1fr}.breakTheIcePrompt{flex-direction:row;min-height:42px;padding:7px 9px;font-size:12px}.breakTheIcePrompt>span:first-child{font-size:22px}}
+    @media(max-width:760px){.chatPanel .breakTheIceTray{margin:7px 0;padding:9px}.chatPanel .whoHere{grid-row:auto}.breakTheIceHead{margin-bottom:7px}.breakTheIcePrompts{grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}.breakTheIcePrompt{flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:0;min-height:58px;padding:6px 3px;font-size:9px;line-height:1.15;text-align:center}.breakTheIcePrompt>span:first-child{font-size:20px}.breakTheIcePrompt>span:last-child{max-width:100%;overflow-wrap:anywhere}}
+    @media(max-width:360px){.breakTheIcePrompt{font-size:8px}.breakTheIcePrompt>span:first-child{font-size:18px}}
   </style>`);
 
   function initialize() {

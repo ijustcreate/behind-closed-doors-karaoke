@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compactRoom, deterministicReplyId, isSummon, relevantFacts, songSearch, stripSummon } from '../lib.mjs';
+import { compactRoom, deterministicReplyId, isSummon, relevantFacts, shouldReplyToMessage, songSearch, stripSummon } from '../lib.mjs';
 
 test('only explicit house-guide summons trigger', () => {
   assert.equal(isSummon('@BCD do we have Wonderwall?'), true);
@@ -8,7 +8,14 @@ test('only explicit house-guide summons trigger', () => {
   assert.equal(isSummon('Hello BCD :)'), true);
   assert.equal(isSummon('Ask BCD: what is on the menu?'), true);
   assert.equal(isSummon('I love the BCD Old Fashioned'), false);
+  assert.equal(isSummon('BCD was busy tonight'), false);
   assert.equal(isSummon('normal room chat'), false);
+});
+
+test('the guide never initiates or replies to ordinary room chat', () => {
+  assert.equal(shouldReplyToMessage({ profile_id: 'member-1', message: 'What is everyone singing?' }), false);
+  assert.equal(shouldReplyToMessage({ profile_id: 'bcd-house-guide', message: '@BCD talk to yourself' }), false);
+  assert.equal(shouldReplyToMessage({ profile_id: 'member-1', message: '@BCD what is on the menu?' }), true);
 });
 
 test('summon is removed from the user question', () => {

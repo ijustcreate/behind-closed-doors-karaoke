@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { buildPrompt, deterministicReplyId, isSummon, loadEnv, relevantFacts, songSearch } from './lib.mjs';
+import { buildPrompt, deterministicReplyId, loadEnv, relevantFacts, shouldReplyToMessage, songSearch } from './lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.join(HERE, '.env'));
@@ -116,7 +116,7 @@ async function cycle() {
   try {
     const room = await fetchRoom();
     const existingIds = new Set(room.map(row => row.id));
-    const candidates = room.filter(row => row.profile_id !== 'bcd-house-guide' && isSummon(row.message));
+    const candidates = room.filter(shouldReplyToMessage);
     for (const source of candidates) {
       const replyId = deterministicReplyId(source.id);
       if (handled.has(source.id) || existingIds.has(replyId)) continue;

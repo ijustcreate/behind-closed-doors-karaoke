@@ -25,6 +25,12 @@ export function isSummon(text) {
     || /^ask\s+bcd\b/i.test(value.trim());
 }
 
+export function shouldReplyToMessage(row) {
+  return Boolean(row)
+    && row.profile_id !== 'bcd-house-guide'
+    && isSummon(row.message);
+}
+
 export function stripSummon(text) {
   return String(text || '')
     .replace(/(?:^|\s)@(?:bcd|house|doorman)\b[,:]?/ig, ' ')
