@@ -1,7 +1,7 @@
 if (!document.getElementById('bcd-info-script')) {
   const bcdInfoScript = document.createElement('script');
   bcdInfoScript.id = 'bcd-info-script';
-  bcdInfoScript.src = 'bcd-info.js?v=20260830-mobile-refresh';
+  bcdInfoScript.src = 'bcd-info.js?v=20260830-question-button';
   document.head.append(bcdInfoScript);
 }
 
@@ -304,7 +304,6 @@ if (!document.getElementById('bcd-info-script')) {
     }
     ensureInstallButton();
     restoreCookieSession();
-    document.head.insertAdjacentHTML('beforeend', '<style>.brandrow:after{content:""!important;right:22px!important;top:13px!important;width:39px!important;height:39px!important;background:#000 url("assets/bcd-question-logo.jpg") center/contain no-repeat!important;transform:none!important}@media(max-width:620px){.brandrow:after{right:10px!important;top:9px!important;width:32px!important;height:32px!important}}</style>');
     document.head.insertAdjacentHTML('beforeend', '<style>.monogram,.landingKey,.coverKey,.menuKey,.clubWelcomeMark,.clubGateIcon,.glyphCoreIcon,.bcdInfoMark{background-color:transparent!important;background-image:url("assets/bcd-key-logo-transparent.png")!important}.achievement[data-achievement^="genre_"]:before{background-image:url("assets/bcd-key-logo-transparent.png")!important;background-size:contain!important;background-position:center!important}.clubContinueKey{mask-image:url("assets/bcd-key-logo-transparent.png")!important;-webkit-mask-image:url("assets/bcd-key-logo-transparent.png")!important}</style>');
     const replaceLegacyKeyImages = root => root.querySelectorAll?.('img[src="assets/bcd-key-mark.svg"],img[src="assets/bcd-key-logo.jpg"]').forEach(image => { image.src = 'assets/bcd-key-logo-transparent.png'; });
     replaceLegacyKeyImages(document);
