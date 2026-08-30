@@ -2,6 +2,7 @@ import type { Platform, Vec2 } from '../types/game';
 
 export const VIEWPORT = { width: 960, height: 540 } as const;
 export const FIXED_STEP = 1 / 60;
+export const DEFAULT_BOT_COUNT = 2;
 export const PHYSICS = {
   gravity: 1420,
   runSpeed: 230,
@@ -46,4 +47,3 @@ export const PLATFORMS: ReadonlyArray<Platform> = [
   { x: 43, y: 220, w: 146, h: 14 }, { x: 337, y: 226, w: 178, h: 14 }, { x: 563, y: 172, w: 166, h: 14 },
   { x: 228, y: 112, w: 132, h: 12 }, { x: 758, y: 100, w: 142, h: 12 }
 ];
-

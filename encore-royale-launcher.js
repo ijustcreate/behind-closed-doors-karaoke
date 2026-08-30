@@ -27,11 +27,16 @@
     const search = document.getElementById('search');
     const genre = document.getElementById('genreFilter');
     const sort = document.getElementById('sortBy');
-    return songbookVisible() && !(search?.value || '').trim() && (!genre || genre.value === 'All genres') && (!sort || sort.value === 'title');
+    return songbookVisible() && !(search?.value || '').trim() && (!genre || genre.value === 'all') && (!sort || sort.value === 'title');
   }
 
   function atDocumentBottom() {
-    return innerHeight + scrollY >= document.documentElement.scrollHeight - 5;
+    const height = Math.max(document.documentElement.scrollHeight, document.body?.scrollHeight || 0);
+    return innerHeight + scrollY >= height - 24;
+  }
+
+  function journeyCanContinue() {
+    return isInstalled() && fullCatalogActive() && journey.started && !journey.invalid;
   }
 
   function journeyEligible() {
@@ -196,8 +201,9 @@
   };
   window.closeEncoreRoyale = closePortal;
   window.render_game_to_text = function () {
-    try { return frame?.contentWindow?.render_game_to_text?.() || JSON.stringify({ mode:committed ? 'loading-game' : 'karaoke-site', installed:isInstalled() }); }
-    catch { return JSON.stringify({ mode:committed ? 'embedded-game' : 'karaoke-site', installed:isInstalled() }); }
+    const launcherState = { mode:committed ? 'loading-game' : 'karaoke-site', installed:isInstalled(), fullCatalog:fullCatalogActive(), journeyStarted:journey.started, journeyInvalid:journey.invalid, atBottom:atDocumentBottom(), tug:Math.round(rawTug) };
+    try { return frame?.contentWindow?.render_game_to_text?.() || JSON.stringify(launcherState); }
+    catch { return JSON.stringify({ ...launcherState, mode:committed ? 'embedded-game' : 'karaoke-site' }); }
   };
 
   window.addEventListener('message', event => {
@@ -214,7 +220,9 @@
     if (addTug(event.deltaY)) event.preventDefault();
   }, { passive:false });
   window.addEventListener('touchstart', event => {
-    touchY = journeyEligible() ? event.touches[0]?.clientY ?? null : null;
+    // Capture before the exact bottom so one portrait swipe can flow from
+    // ordinary document scrolling into the resisted secret pull.
+    touchY = journeyCanContinue() ? event.touches[0]?.clientY ?? null : null;
   }, { passive:true });
   window.addEventListener('touchmove', event => {
     if (touchY === null) return;

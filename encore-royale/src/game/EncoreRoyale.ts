@@ -1,5 +1,6 @@
-import { BOT_NAMES, COMBAT, FALLBACK_SONGS, FIXED_STEP, PALETTES, PHYSICS, PLATFORMS, SPAWNS, VIEWPORT } from '../config/gameplay';
+import { BOT_NAMES, COMBAT, DEFAULT_BOT_COUNT, FALLBACK_SONGS, FIXED_STEP, PALETTES, PHYSICS, PLATFORMS, SPAWNS, VIEWPORT } from '../config/gameplay';
 import { FixedStepLoop } from '../engine/FixedStepLoop';
+import { haptic } from '../engine/Haptics';
 import { InputManager } from '../engine/InputManager';
 import { CanvasRenderer } from '../rendering/CanvasRenderer';
 import type { AnimationState, FeedItem, Fighter, GameMode, GameSession, GameSnapshot, LobbyProfile, NoteArrow, Particle, Vec2 } from '../types/game';
@@ -127,8 +128,9 @@ export class EncoreRoyale {
     this.player.previousX = this.player.x;
     this.player.previousY = this.player.y;
     this.player.animation = 'idle';
+    this.player.invulnerableTime = 0;
     this.fighters = [];
-    for (let index = 0; index < 5; index++) {
+    for (let index = 0; index < DEFAULT_BOT_COUNT; index++) {
       this.fighters.push(createFighter({
         id: `bot-${index}`,
         name: BOT_NAMES[index]!,
@@ -172,6 +174,7 @@ export class EncoreRoyale {
       this.player.vy = -405;
       this.player.grounded = false;
       this.burst(this.player.x + this.player.w / 2, floor, this.player.color, 8, 72, true);
+      haptic(10);
     }
     this.player.vy += PHYSICS.gravity * dt;
     this.player.x = clamp(this.player.x + this.player.vx * dt, 54, VIEWPORT.width - 76);
@@ -319,6 +322,7 @@ export class EncoreRoyale {
     } else return false;
     this.setAnimation(fighter, 'jump');
     this.burst(fighter.x + fighter.w / 2, fighter.y + fighter.h, fighter.color, 7, 70);
+    if (fighter.isPlayer) haptic(10);
     return true;
   }
 
@@ -350,6 +354,7 @@ export class EncoreRoyale {
     fighter.vx -= fighter.facing * 28;
     this.setAnimation(fighter, 'shoot');
     this.burst(fighter.x + fighter.w / 2 + fighter.facing * 14, fighter.y + 14, fighter.color, 5, 48);
+    if (fighter.isPlayer) haptic(8);
   }
 
   private collideFighter(fighter: Fighter): void {
@@ -399,6 +404,7 @@ export class EncoreRoyale {
             if (!fighter.alive || fighter.id === arrow.ownerId || fighter.invulnerableTime > 0) continue;
             if (arrow.x >= fighter.x - 3 && arrow.x <= fighter.x + fighter.w + 3 && arrow.y >= fighter.y - 2 && arrow.y <= fighter.y + fighter.h + 2) {
               this.kill(fighter, arrow.ownerId, arrow.song);
+              arrow.labelTime = Math.max(arrow.labelTime, 1.05);
               this.stickArrow(arrow);
               break;
             }
@@ -441,6 +447,8 @@ export class EncoreRoyale {
     victim.vy = -260;
     victim.animation = 'ko';
     victim.animationTime = 0;
+    if (victim.isPlayer) haptic([26, 24, 48]);
+    else if (killerId === this.player.id) haptic([12, 16, 12]);
     const killer = this.fighters.find(fighter => fighter.id === killerId);
     if (killer && killer !== victim) killer.kills++;
     this.addFeed(`${killer?.name ?? 'The stage'} ♪ ${victim.name} · ${song}`, killer?.color ?? '#f0d07a');
@@ -463,6 +471,7 @@ export class EncoreRoyale {
     fighter.respawnTime = 0;
     fighter.animation = 'respawn';
     fighter.animationTime = 0;
+    if (fighter.isPlayer) haptic([9, 24, 12]);
     this.burst(fighter.x + fighter.w / 2, fighter.y + fighter.h / 2, fighter.color, 16, 105, true);
   }
 

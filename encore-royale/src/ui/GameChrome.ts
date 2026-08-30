@@ -105,7 +105,7 @@ export class GameChrome {
     return `<div class="game-controller" aria-label="Retro game controller">
       <div class="dpad"><button class="pad up" data-control="up" aria-label="Aim up"></button><button class="pad left" data-control="left" aria-label="Move left"></button><span class="pad-center"></span><button class="pad right" data-control="right" aria-label="Move right"></button><button class="pad down" data-control="down" aria-label="Crouch or aim down"></button></div>
       <div class="center-controls"><label>SELECT<button data-action="fullscreen"></button></label><label>START<button data-action="pause"></button></label></div>
-      <div class="action-controls"><label><button data-control="dodge">B</button>B</label><label><button data-control="jump">A</button>A</label><label><button data-control="shoot">♫</button>NOTE</label></div>
+      <div class="action-controls"><label><button data-control="dodge">B</button>DODGE</label><label><button data-control="jump">A</button>JUMP</label><label><button data-control="shoot">♫</button>NOTE</label></div>
     </div>`;
   }
 }
