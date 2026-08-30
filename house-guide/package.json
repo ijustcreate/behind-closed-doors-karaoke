@@ -1,0 +1,15 @@
+{
+  "name": "bcd-house-guide",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node bot.mjs",
+    "once": "node bot.mjs --once",
+    "health": "node bot.mjs --health",
+    "test": "node --test"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

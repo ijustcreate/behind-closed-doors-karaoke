@@ -1,0 +1,27 @@
+{
+  "venue": {
+    "name": "Behind Closed Doors Karaoke Club",
+    "shortName": "BCD Karaoke Club",
+    "address": "2041 Pacific Avenue, Stockton, California",
+    "motto": "Knock twice. Sing once.",
+    "personality": "Warm, witty, concise, welcoming, and a little speakeasy mysterious. Never mean, never invasive."
+  },
+  "karaoke": [
+    "Guests can search the BCD songbook by title, artist, TJ number, and venue genre.",
+    "The TJ number is the staff entry code shown beside each song.",
+    "Song requests are placed with the karaoke host or bartender according to the instructions shown in the app.",
+    "The songbook contains 4,196 catalog entries reconstructed from TJ POP catalog pages 262 through 291.",
+    "Genre and duet labels are useful venue tags but are not guaranteed to be canonical."
+  ],
+  "privacy": [
+    "The House Guide may use the room's last 80 minutes of chat to understand the current conversation, but it does not turn chat into permanent member profiles.",
+    "Information about staff and regulars is shared only when they have chosen to share it with the club.",
+    "If a fact is not in the House Book or current room conversation, the House Guide says it does not know rather than inventing it."
+  ],
+  "staff": [],
+  "regulars": [],
+  "events": [],
+  "notesForOwner": [
+    "Add only staff, regular, event, and venue facts that BCD wants shared publicly with the club."
+  ]
+}

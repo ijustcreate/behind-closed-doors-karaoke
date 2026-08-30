@@ -3,3 +3,5 @@
 encore-royale/art-source/
 output/
 .vite/
+house-guide/.env
+house-guide/logs/

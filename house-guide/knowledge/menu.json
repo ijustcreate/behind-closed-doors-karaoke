@@ -1,0 +1,17 @@
+{
+  "menuName": "Behind Closed Doors specialty drink menu",
+  "drinks": [
+    {"name":"Vino Colada","price":"$12","description":"Pinot Grigio, coconut rum, pineapple, mango, coconut"},
+    {"name":"Melontini","price":"$14","description":"Vodka, melon soju, fresh lime"},
+    {"name":"The Wimbledon","price":"$15","description":"Gin, Pimm's, ginger liqueur, housemade mint syrup, fresh lemon"},
+    {"name":"Jalapeño Business","price":"$14","description":"Reposado tequila, agave, cucumber, jalapeño, fresh lime"},
+    {"name":"BCD Old Fashioned","price":"$14","description":"Bourbon, housemade blackberry honey syrup, aromatic bitters, orange peel"},
+    {"name":"Crown Jewel","price":"$15","description":"Scotch, Crown Apple, Luxardo cherry syrup, Fee foam, fresh lemon"},
+    {"name":"Dark Side of the Rum","price":"$15","description":"Rum, Kahlua, RumChata, allspice dram, cold brew"}
+  ],
+  "bar": [
+    "The bar carries vodka, gin, tequila and mezcal, whiskey, rum, brandy and cognac, and liqueurs.",
+    "Beer, cider, soft drinks, water, mocktails, shots, highballs, and seasonal options may be available.",
+    "Current availability can change; ask the bartender when the exact stock matters."
+  ]
+}
