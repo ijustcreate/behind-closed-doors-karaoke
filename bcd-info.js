@@ -78,7 +78,7 @@
     const kicker = document.querySelector('.bcdInfoKicker');
     if (kicker) kicker.innerHTML = '<span>AN UPSCALE SPEAKEASY</span><span>IN THE HEART OF</span><span>THE MIRACLE MILE</span>';
     const story = document.querySelector('.bcdInfoStory');
-    if (story) story.innerHTML = '<strong class="bcdInfoLine">Behind Closed Doors</strong><span class="bcdInfoLine">is a speakeasy tucked behind</span><span class="bcdInfoLine">Seoul Soon Dubu Korean BBQ.</span><span class="bcdInfoLine">An after-hours mixologist cocktail bar</span><span class="bcdInfoLine">known for delicious drinks, close conversations,</span><span class="bcdInfoLine">and songs that deserve the mic.</span>';
+    if (story) story.innerHTML = '<strong class="bcdInfoLine">Behind Closed Doors</strong><span class="bcdInfoLine">is a speakeasy tucked behind</span><span class="bcdInfoLine">Seoul Soon Dubu Korean BBQ.</span><span class="bcdInfoLine">An after-hours cocktail bar</span><span class="bcdInfoLine">known for delicious drinks, close conversations,</span><span class="bcdInfoLine">and songs that deserve the mic.</span>';
 
     window.openAboutBCD = openAboutBCD;
   }
