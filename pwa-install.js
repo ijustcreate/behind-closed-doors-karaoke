@@ -3,7 +3,7 @@ if (!document.getElementById('bcdkc-member-touch-icon')) {
   memberTouchIcon.id = 'bcdkc-member-touch-icon';
   memberTouchIcon.rel = 'apple-touch-icon';
   memberTouchIcon.sizes = '180x180';
-  memberTouchIcon.href = 'assets/bcdkc-member-icon-v2-180.png';
+  memberTouchIcon.href = 'assets/bcdkc-member-icon-v3-180.png';
   document.head.append(memberTouchIcon);
 }
 if (!document.getElementById('bcd-info-script')) {
