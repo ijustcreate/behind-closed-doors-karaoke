@@ -19,7 +19,7 @@
 
   function showTray() {
     const tray = document.getElementById('breakTheIceTray');
-    if (tray) tray.hidden = wasDismissedToday();
+    if (tray) tray.hidden = true;
   }
 
   window.dismissBreakTheIce = function () {
