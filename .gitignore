@@ -1,3 +1,5 @@
 .codex-http.pid
 .playwright-cli/
-
+encore-royale/art-source/
+output/
+.vite/
