@@ -396,7 +396,7 @@ function drawShareQr(url){
   target.replaceChildren();
   new QRCode(target,{text:url,width:300,height:300,colorDark:'#311015',colorLight:'#f5e8c9',correctLevel:QRCode.CorrectLevel.H});
   const canvas=target.querySelector('canvas');
-  if(canvas){canvas.setAttribute('aria-label','QR code for Behind Closed Doors Karaoke');canvas.setAttribute('role','img');const logo=new Image(),ctx=canvas.getContext('2d'),size=canvas.width,box=Math.round(size*.18),x=Math.round((size-box)/2),inset=Math.max(4,Math.round(box*.12));logo.onload=()=>{ctx.fillStyle='#f5e8c9';ctx.fillRect(x,x,box,box);ctx.drawImage(logo,x+inset,x+inset,box-inset*2,box-inset*2)};logo.src='assets/bcd-karaoke-logo-transparent.png'}
+  if(canvas){canvas.setAttribute('aria-label','QR code for Behind Closed Doors Karaoke');canvas.setAttribute('role','img');const logo=new Image(),ctx=canvas.getContext('2d'),size=canvas.width,box=Math.round(size*.18),x=Math.round((size-box)/2),inset=Math.max(4,Math.round(box*.12));logo.onload=()=>{ctx.fillStyle='#f5e8c9';ctx.fillRect(x,x,box,box);ctx.drawImage(logo,x+inset,x+inset,box-inset*2,box-inset*2)};logo.src='assets/bcd-karaoke-logo-transparent.webp'}
   status.textContent='Point your camera here to enter the songbook.';
 }
 function downloadShareQr(){
