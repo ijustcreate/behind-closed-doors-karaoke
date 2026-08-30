@@ -1,3 +1,11 @@
+if (!document.getElementById('bcdkc-member-touch-icon')) {
+  const memberTouchIcon = document.createElement('link');
+  memberTouchIcon.id = 'bcdkc-member-touch-icon';
+  memberTouchIcon.rel = 'apple-touch-icon';
+  memberTouchIcon.sizes = '180x180';
+  memberTouchIcon.href = 'assets/bcdkc-member-icon-180.png';
+  document.head.append(memberTouchIcon);
+}
 if (!document.getElementById('bcd-info-script')) {
   const bcdInfoScript = document.createElement('script');
   bcdInfoScript.id = 'bcd-info-script';
