@@ -58,6 +58,8 @@
       .bcdInfoScene{z-index:1}.bcdInfoScene:after{background:linear-gradient(90deg,rgba(19,9,8,.76),rgba(12,7,6,.2) 43%,transparent)}
       .bcdInfoNight{margin:14px auto 0;border-radius:8px}
       @media(max-width:700px){.bcdInfoFeature{grid-template-columns:1.24fr .76fr}.bcdInfoScene{margin-left:-86px;background-position:20% center}.bcdInfoKicker{font-size:7.5px;letter-spacing:.115em}.bcdInfoStory{font-size:9.4px;line-height:1.42}.bcdInfoAddressIcon{left:10px}.bcdInfoNight{margin-top:11px}}
+      @media(max-width:520px){.bcdInfoFeature{display:block;min-height:0}.bcdInfoCopy{padding:17px 18px 19px;box-shadow:none}.bcdInfoScene{display:none}.bcdInfoCopy h3{padding-right:44px}.bcdInfoKicker span{white-space:normal}.bcdInfoStory{font-size:12px;line-height:1.48;letter-spacing:.045em;overflow-wrap:anywhere}.bcdInfoStory .bcdInfoLine{display:inline;white-space:normal}.bcdInfoStory .bcdInfoLine:not(:last-child):after{content:' '}.bcdInfoStory strong.bcdInfoLine{display:block;margin-bottom:3px}.bcdInfoStory strong.bcdInfoLine:after{content:''}.bcdInfoActions{grid-template-columns:1fr 1fr}}
+      @media(max-width:350px){.bcdInfoActions{grid-template-columns:1fr}}
     </style>`);
 
     const actions = document.querySelector('.headerActions');

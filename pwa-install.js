@@ -1,7 +1,7 @@
 if (!document.getElementById('bcd-info-script')) {
   const bcdInfoScript = document.createElement('script');
   bcdInfoScript.id = 'bcd-info-script';
-  bcdInfoScript.src = 'bcd-info.js?v=20260830-logo';
+  bcdInfoScript.src = 'bcd-info.js?v=20260830-mobile-refresh';
   document.head.append(bcdInfoScript);
 }
 
@@ -9,6 +9,9 @@ if (!document.getElementById('bcd-info-script')) {
   'use strict';
 
   let deferredPrompt = null;
+  let serviceWorkerRegistration = null;
+  let refreshRequested = false;
+  let updateNoticeShown = false;
   const installSelector = '#bcdkcInstallButton';
   const profileCookieName = 'bcdkc_last_profile';
   const canInstallPwa = () => window.isSecureContext || location.hostname === 'localhost';
@@ -31,6 +34,62 @@ if (!document.getElementById('bcd-info-script')) {
       button.setAttribute('aria-disabled', 'true');
       button.title = 'Behind Closed Doors Karaoke Club is installed.';
     });
+    ensureRefreshButton();
+  }
+
+  function ensureRefreshButton() {
+    const actions = document.querySelector('#profileView .profileActions');
+    let button = document.getElementById('bcdkcRefreshButton');
+    if (!isInstalled() || !actions) {
+      button?.remove();
+      return;
+    }
+    if (!button) {
+      button = document.createElement('button');
+      button.type = 'button';
+      button.id = 'bcdkcRefreshButton';
+      button.className = 'btn gold small bcdkcRefreshButton';
+      button.textContent = 'Refresh App';
+      button.title = 'Check for the newest BCDKC version and reopen it.';
+      button.addEventListener('click', refreshInstalledApp);
+      actions.append(button);
+    }
+  }
+
+  function markUpdateAvailable() {
+    ensureRefreshButton();
+    const button = document.getElementById('bcdkcRefreshButton');
+    if (button) {
+      button.textContent = 'Update App';
+      button.title = 'A newer BCDKC version is ready. Tap to refresh.';
+      button.classList.add('updateReady');
+    }
+    if (!updateNoticeShown) {
+      updateNoticeShown = true;
+      window.toast?.('A new BCDKC version is ready — tap Update App in your profile');
+    }
+  }
+
+  async function refreshInstalledApp() {
+    const button = document.getElementById('bcdkcRefreshButton');
+    refreshRequested = true;
+    if (button) {
+      button.disabled = true;
+      button.textContent = 'Refreshing…';
+    }
+    window.toast?.('Checking for the newest BCDKC…');
+    try {
+      if (serviceWorkerRegistration) {
+        await serviceWorkerRegistration.update();
+        serviceWorkerRegistration.waiting?.postMessage({ type: 'SKIP_WAITING' });
+      }
+      const url = new URL(location.href);
+      url.searchParams.set('bcd-refresh', Date.now().toString());
+      location.replace(url.href);
+    } catch (error) {
+      console.warn('Could not complete the app refresh.', error);
+      location.reload();
+    }
   }
 
   function profileCookie() {
@@ -151,6 +210,7 @@ if (!document.getElementById('bcd-info-script')) {
     const actions = document.querySelector('#profileView .profileActions');
     if (!actions) return;
     if (actions.querySelector(installSelector)) {
+      if (isInstalled()) ensureRefreshButton();
       ensureChatBadgeButton();
       return;
     }
@@ -218,6 +278,11 @@ if (!document.getElementById('bcd-info-script')) {
   });
   window.addEventListener('appinstalled', () => { deferredPrompt = null; installedState(); });
 
+  navigator.serviceWorker?.addEventListener('controllerchange', () => {
+    if (refreshRequested) location.reload();
+    else if (isInstalled()) markUpdateAvailable();
+  });
+
   window.addEventListener('DOMContentLoaded', () => {
     connectProfileCookie();
     rememberProfile(currentUser?.());
@@ -225,7 +290,17 @@ if (!document.getElementById('bcd-info-script')) {
     connectUnreadBadge();
     createModal();
     if ('serviceWorker' in navigator && canInstallPwa()) {
-      navigator.serviceWorker.register('./sw.js').catch(error => console.warn('Service worker registration failed.', error));
+      navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => {
+        serviceWorkerRegistration = registration;
+        if (registration.waiting && navigator.serviceWorker.controller) markUpdateAvailable();
+        registration.addEventListener('updatefound', () => {
+          const worker = registration.installing;
+          worker?.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) markUpdateAvailable();
+          });
+        });
+        return registration.update();
+      }).catch(error => console.warn('Service worker registration failed.', error));
     }
     ensureInstallButton();
     restoreCookieSession();
