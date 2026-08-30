@@ -4,6 +4,21 @@
   let longPressTimer = null;
   let longPressOrigin = null;
   const EDIT_WINDOW_MS = 5 * 60 * 1000;
+  // This stays in the sender's browser only. It is never stored with the chat message.
+  const pendingBcdReplies = new Map();
+
+  function summonsBcd(text) {
+    return /(?:^|\s)@bcd\b/i.test(text) || /(?:^|\s)hey\s+bcd\b/i.test(text);
+  }
+  async function bcdReplyIdFor(sourceId) {
+    const bytes = new TextEncoder().encode(String(sourceId));
+    const digest = await crypto.subtle.digest('SHA-256', bytes);
+    const hash = Array.from(new Uint8Array(digest), byte => byte.toString(16).padStart(2, '0')).join('');
+    return `bcd-guide-${hash.slice(0, 24)}`;
+  }
+  function pendingDots() {
+    return '<article class="chatMessage bot chatPending" aria-label="BCD is preparing a reply"><span class="chatPendingDots" aria-hidden="true"><i></i><i></i><i></i></span></article>';
+  }
 
   const chatApi = async body => {
     const response = await fetch(`${SUPABASE_URL}/functions/v1/karaoke-chat`, {
@@ -35,14 +50,17 @@
     if (!list) return;
     const nearBottom = list.scrollHeight - list.scrollTop - list.clientHeight < 90;
     const color = /^#[0-9a-f]{6}$/i.test(user?.chatColor || '') ? user.chatColor : '';
-    list.innerHTML = chatMessages.map(message => {
+    const messages = chatMessages.map(message => {
       const mine = message.profileId === user?.id;
       const isBot = message.profileId === 'bcd-house-guide';
       const ownStyle = mine && color ? ` style="--own-chat-color:${color}"` : '';
       if (chatEditingId === message.id) return `<article class="chatMessage own chatEditing" data-chat-id="${esc(message.id)}"${ownStyle}><textarea id="editChatText" class="control" maxlength="1000">${esc(message.message || '')}</textarea><div class="editActions"><button class="btn gold small" type="button" onclick="saveChatEdit('${message.id}')">Save</button><button class="btn ghost small" type="button" onclick="cancelChatEdit()">Cancel</button></div></article>`;
       const reactions = reactionsFor(message);
-      return `<article class="chatMessage ${mine ? 'own' : isBot ? 'bot' : 'other'}" data-chat-id="${esc(message.id)}"${ownStyle}><div class="chatMessageHead"><strong>${esc(message.singerName)}${isBot ? '<span class="houseGuideBadge">HOUSE VOICE</span>' : ''}</strong><time>${fmtTime(message.createdAt)}${message.editedAt ? ' · edited' : ''}</time></div>${message.message ? `<div class="chatMessageBody">${esc(message.message).replace(/\n/g, '<br>')}</div>` : ''}${messageImages(message)}${reactions ? `<div class="chatReactionEdge">${reactions}</div>` : ''}</article>`;
-    }).join('') || '<div class="chatEmpty"><strong>The booth is open.</strong>Be the first to say hello tonight.</div>';
+      const name = isBot ? 'BCD Host' : message.singerName;
+      return `<article class="chatMessage ${mine ? 'own' : isBot ? 'bot' : 'other'}" data-chat-id="${esc(message.id)}"${ownStyle}><div class="chatMessageHead"><strong>${esc(name)}</strong><time>${fmtTime(message.createdAt)}${message.editedAt ? ' · edited' : ''}</time></div>${message.message ? `<div class="chatMessageBody">${esc(message.message).replace(/\n/g, '<br>')}</div>` : ''}${messageImages(message)}${reactions ? `<div class="chatReactionEdge">${reactions}</div>` : ''}</article>`;
+    }).join('');
+    list.innerHTML = messages || '<div class="chatEmpty"><strong>The booth is open.</strong>Be the first to say hello tonight.</div>';
+    if (pendingBcdReplies.size) list.insertAdjacentHTML('beforeend', pendingDots());
     if (nearBottom) requestAnimationFrame(() => { list.scrollTop = list.scrollHeight; });
   };
 
@@ -62,6 +80,10 @@
         createdAt: new Date(row.created_at).getTime(),
         editedAt: row.edited_at ? new Date(row.edited_at).getTime() : null,
       }));
+      const receivedIds = new Set(chatMessages.map(message => message.id));
+      for (const [sourceId, replyId] of pendingBcdReplies) {
+        if (receivedIds.has(replyId)) pendingBcdReplies.delete(sourceId);
+      }
       if (activeTab === 'chat' && !chatEditingId) renderChat();
       updateChatUnread();
     } catch (error) {
@@ -230,6 +252,15 @@
     renderChat();
     try {
       await sharedFetch('karaoke_chat_messages', { method: 'POST', body: JSON.stringify({ id: row.id, profile_id: row.profileId, singer_name: row.singerName, message: row.message, night_key: nightKey(), image_urls: row.images, reactions: {} }) });
+      if (summonsBcd(row.message)) {
+        bcdReplyIdFor(row.id).then(replyId => {
+          pendingBcdReplies.set(row.id, replyId);
+          if (activeTab === 'chat') renderChat();
+          setTimeout(() => {
+            if (pendingBcdReplies.delete(row.id) && activeTab === 'chat') renderChat();
+          }, 180000);
+        }).catch(() => {});
+      }
       state.chatMessageCounts = { ...(state.chatMessageCounts || {}), [user.id]: (state.chatMessageCounts?.[user.id] || 0) + 1 };
       saveState();
       awardAchievement('chat_first');
@@ -518,7 +549,7 @@
       .chatComposeActions{display:grid;grid-template-rows:minmax(43px,1fr) 43px;gap:7px}.chatSend,.chatPlus{width:64px!important;min-width:0!important;margin:0!important;padding:0 5px!important}.chatSend{height:100%!important;font-size:11px!important}.chatPlus{height:43px!important;font-size:28px!important;line-height:1!important;color:#e4bf69!important}.chatTokenCount{position:absolute!important;right:8px!important;bottom:5px!important;z-index:2!important;display:block!important;border:0!important;background:transparent!important;color:#756f68!important;font:500 10px/1 ui-sans-serif,system-ui!important;pointer-events:none}.chatTokenCount.atMax{color:#e0a13c!important;animation:chatCountGlow .8s ease-in-out infinite alternate}
       @keyframes chatCountGlow{to{color:#f2bd58;text-shadow:0 0 8px rgba(224,161,60,.35)}}
       .chatRetentionNote{margin:7px 2px 0;color:#776e62;font:500 9px/1.35 ui-sans-serif,system-ui;text-align:center}.chatAttachments{display:flex!important;gap:6px;min-height:0;margin:0 0 7px!important;padding:0!important;overflow-x:auto}.chatAttachments[hidden]{display:none!important}.chatDraftThumb{position:relative;flex:0 0 46px;width:46px;height:46px;border:1px solid rgba(201,162,87,.38);border-radius:5px;background:#100b08}.chatDraftThumb img{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px}.chatDraftThumb button{position:absolute;right:-5px;top:-6px;display:grid;place-items:center;width:17px;height:17px;padding:0;border:1px solid #c9a257;border-radius:50%;background:#24120f;color:#f5dfb8;font:700 13px/1 ui-sans-serif;cursor:pointer}
-      .chatMessage.bot{align-self:center!important;max-width:min(88%,680px)!important;border-color:rgba(224,183,82,.7)!important;background:linear-gradient(145deg,#2b2115,#14100b)!important;box-shadow:0 8px 24px rgba(0,0,0,.38),0 0 18px rgba(201,162,87,.08)!important}.chatMessage.bot .chatMessageHead strong{display:flex;align-items:center;gap:7px}.houseGuideBadge{padding:2px 5px;border:1px solid rgba(224,183,82,.48);border-radius:999px;color:#dfc07a;font:700 7px/1 ui-sans-serif,system-ui;letter-spacing:.11em}.houseGuideCall{margin-top:12px!important}.houseGuideCall small{display:block;margin-top:3px;color:#917f63;font:500 8px/1.25 ui-sans-serif,system-ui;letter-spacing:.02em;text-transform:none}
+      .chatMessage.bot{align-self:center!important;max-width:min(88%,680px)!important;border-color:rgba(224,183,82,.7)!important;background:linear-gradient(145deg,#2b2115,#14100b)!important;box-shadow:0 8px 24px rgba(0,0,0,.38),0 0 18px rgba(201,162,87,.08)!important}.chatPending{display:flex!important;align-items:center!important;min-width:48px!important;min-height:30px!important;padding:6px 12px!important;opacity:.86}.chatPendingDots{display:flex;align-items:center;gap:4px;height:14px}.chatPendingDots i{display:block;width:5px;height:5px;border-radius:50%;background:#ead29a;animation:bcdPendingDot 1.1s ease-in-out infinite}.chatPendingDots i:nth-child(2){animation-delay:.16s}.chatPendingDots i:nth-child(3){animation-delay:.32s}@keyframes bcdPendingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
       .chatMessage{position:relative}.chatMessage:has(.chatReactionEdge){margin-bottom:12px}.chatMessageImages{display:grid;grid-template-columns:repeat(2,72px);gap:5px;margin-top:7px}.chatMessageImages:not(.multiple){grid-template-columns:112px}.chatImageThumb{display:block;width:72px;height:72px;padding:0;border:1px solid rgba(201,162,87,.32);border-radius:6px;overflow:hidden;background:#0b0806;cursor:pointer}.chatMessageImages:not(.multiple) .chatImageThumb{width:112px;height:96px}.chatImageThumb img{display:block;width:100%;height:100%;object-fit:cover}.chatReactionEdge{position:absolute;right:8px;bottom:-13px;display:flex;gap:3px;z-index:2}.chatMessage.other .chatReactionEdge{right:auto;left:8px}.chatReactionCount{display:flex;align-items:center;gap:2px;height:24px;padding:2px 6px;border:1px solid rgba(201,162,87,.38);border-radius:999px;background:#160f0b;color:#ead7b3;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.45)}.chatReactionCount small{font-size:9px;color:#a9997d}
       .chatActions{position:fixed!important;z-index:1100!important}.chatActions.ownActions{display:grid!important;min-width:220px!important;padding:5px!important;border:1px solid rgba(201,162,87,.72)!important;border-radius:6px!important;background:linear-gradient(145deg,#2b1a11,#100b08)!important;box-shadow:0 16px 42px rgba(0,0,0,.68)!important}.chatActions.ownActions button{padding:11px 12px!important;border:0!important;background:transparent!important;color:#efdbaf!important;text-align:left!important;font:600 12px ui-sans-serif,system-ui!important}.chatActions.ownActions button:hover{background:rgba(201,162,87,.14)!important}.chatActions.reactionActions{display:flex!important;gap:2px!important;padding:6px!important;border:1px solid rgba(201,162,87,.65)!important;border-radius:999px!important;background:#17100c!important;box-shadow:0 14px 36px rgba(0,0,0,.66)!important}.chatActions.reactionActions button{display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:transparent;font-size:22px;cursor:pointer;transition:transform .12s,background .12s}.chatActions.reactionActions button:hover,.chatActions.reactionActions button:focus{transform:scale(1.16);background:rgba(201,162,87,.14);outline:0}
       .chatEditing{width:min(78%,620px);box-sizing:border-box}.chatEditing textarea{min-height:78px!important;max-height:180px!important;resize:vertical!important}.chatImageModal .modal{display:flex;flex-direction:column;align-items:center;width:min(92vw,760px);max-width:760px}.chatImageStage{position:relative;max-width:100%;padding:7px;background:linear-gradient(145deg,#2d1d12,#080604);border:1px solid rgba(224,183,82,.75);box-shadow:0 0 0 1px rgba(255,226,154,.16) inset,0 18px 42px rgba(0,0,0,.52)}.chatImageStage:before,.chatImageStage:after{content:'';position:absolute;width:24px;height:24px;pointer-events:none}.chatImageStage:before{left:3px;top:3px;border-left:1px solid rgba(255,226,154,.78);border-top:1px solid rgba(255,226,154,.78)}.chatImageStage:after{right:3px;bottom:3px;border-right:1px solid rgba(255,226,154,.78);border-bottom:1px solid rgba(255,226,154,.78)}.chatImageModal img{display:block;max-width:100%;max-height:72vh;object-fit:contain;border:1px solid rgba(201,162,87,.4);background:#080604}.chatImageDownload{display:grid!important;place-items:center;width:42px!important;height:42px!important;margin-top:12px!important;padding:0!important}.chatImageDownload:disabled{cursor:wait!important;opacity:.65}.chatImageDownload svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}

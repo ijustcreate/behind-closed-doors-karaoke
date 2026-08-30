@@ -92,7 +92,7 @@ async function postReply(source, message) {
   const row = {
     id: deterministicReplyId(source.id),
     profile_id: 'bcd-house-guide',
-    singer_name: 'BCD House Guide',
+    singer_name: 'BCD Host',
     message,
     image_urls: [],
     night_key: source.night_key,
