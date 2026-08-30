@@ -11,6 +11,7 @@ if (!document.getElementById('bcd-info-script')) {
   let deferredPrompt = null;
   let serviceWorkerRegistration = null;
   let refreshRequested = false;
+  let updateAvailable = false;
   let updateNoticeShown = false;
   const installSelector = '#bcdkcInstallButton';
   const profileCookieName = 'bcdkc_last_profile';
@@ -40,7 +41,7 @@ if (!document.getElementById('bcd-info-script')) {
   function ensureRefreshButton() {
     const actions = document.querySelector('#profileView .profileActions');
     let button = document.getElementById('bcdkcRefreshButton');
-    if (!isInstalled() || !actions) {
+    if (!isInstalled() || !actions || !updateAvailable) {
       button?.remove();
       return;
     }
@@ -57,6 +58,7 @@ if (!document.getElementById('bcd-info-script')) {
   }
 
   function markUpdateAvailable() {
+    updateAvailable = true;
     ensureRefreshButton();
     const button = document.getElementById('bcdkcRefreshButton');
     if (button) {
@@ -305,6 +307,7 @@ if (!document.getElementById('bcd-info-script')) {
     ensureInstallButton();
     restoreCookieSession();
     document.head.insertAdjacentHTML('beforeend', '<style>.monogram,.landingKey,.coverKey,.menuKey,.clubWelcomeMark,.clubGateIcon,.glyphCoreIcon,.bcdInfoMark{background-color:transparent!important;background-image:url("assets/bcd-key-logo-transparent.png")!important}.achievement[data-achievement^="genre_"]:before{background-image:url("assets/bcd-key-logo-transparent.png")!important;background-size:contain!important;background-position:center!important}.clubContinueKey{mask-image:url("assets/bcd-key-logo-transparent.png")!important;-webkit-mask-image:url("assets/bcd-key-logo-transparent.png")!important}</style>');
+    document.head.insertAdjacentHTML('beforeend', '<style>.brandrow:after,.aboutVenueButton{background-color:transparent!important;background-image:url("assets/bcd-question-logo-transparent.png")!important;filter:saturate(.62) brightness(.86)}.member-signed-in .monogram{background-color:transparent!important;background-image:url("assets/bcd-karaoke-logo-transparent.png")!important}</style>');
     const replaceLegacyKeyImages = root => root.querySelectorAll?.('img[src="assets/bcd-key-mark.svg"],img[src="assets/bcd-key-logo.jpg"]').forEach(image => { image.src = 'assets/bcd-key-logo-transparent.png'; });
     replaceLegacyKeyImages(document);
     new MutationObserver(records => records.forEach(record => record.addedNodes.forEach(node => { if (node.nodeType === Node.ELEMENT_NODE) replaceLegacyKeyImages(node); }))).observe(document.body, { childList: true, subtree: true });
