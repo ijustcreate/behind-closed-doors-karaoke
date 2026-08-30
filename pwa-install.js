@@ -290,7 +290,6 @@ if (!document.getElementById('bcd-info-script')) {
 
   navigator.serviceWorker?.addEventListener('controllerchange', () => {
     if (refreshRequested) location.reload();
-    else if (isInstalled()) markUpdateAvailable();
   });
 
   window.addEventListener('DOMContentLoaded', () => {
@@ -303,12 +302,6 @@ if (!document.getElementById('bcd-info-script')) {
       navigator.serviceWorker.register('./sw.js', { updateViaCache: 'none' }).then(registration => {
         serviceWorkerRegistration = registration;
         if (registration.waiting && navigator.serviceWorker.controller) markUpdateAvailable();
-        registration.addEventListener('updatefound', () => {
-          const worker = registration.installing;
-          worker?.addEventListener('statechange', () => {
-            if (worker.state === 'installed' && navigator.serviceWorker.controller) markUpdateAvailable();
-          });
-        });
         return registration.update();
       }).catch(error => console.warn('Service worker registration failed.', error));
     }
