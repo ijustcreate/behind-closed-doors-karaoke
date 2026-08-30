@@ -1,10 +1,11 @@
 (function () {
   'use strict';
 
-  if (!document.querySelector('link[href="membership-flow.css"]')) {
+  if (!document.getElementById('membership-flow-style')) {
     const stylesheet = document.createElement('link');
+    stylesheet.id = 'membership-flow-style';
     stylesheet.rel = 'stylesheet';
-    stylesheet.href = 'membership-flow.css';
+    stylesheet.href = 'membership-flow.css?v=20260830-logo';
     document.head.append(stylesheet);
   }
 

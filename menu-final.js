@@ -26,6 +26,22 @@
     renderMenuLibrary();
   }
   window.renderDrinkMenu = renderMenu;
+  const nativeRememberSharedProfile = window.rememberSharedProfile;
+  if (typeof nativeRememberSharedProfile === 'function') {
+    window.rememberSharedProfile = function () {
+      const user = nativeRememberSharedProfile.apply(this, arguments);
+      requestAnimationFrame(renderMenu);
+      return user;
+    };
+  }
+  const nativeSwitchTab = window.switchTab;
+  if (typeof nativeSwitchTab === 'function') {
+    window.switchTab = function (tab) {
+      const result = nativeSwitchTab.apply(this, arguments);
+      if (tab === 'drinks') requestAnimationFrame(renderMenu);
+      return result;
+    };
+  }
   window.openDrinkPhotoSafely = (id, event) => { event?.preventDefault(); event?.stopImmediatePropagation(); showDrinkPhoto(id); };
   document.addEventListener('click', event => { const item = event.target.closest('.drinkItem.hasPhoto'); if (!item) return; event.preventDefault(); event.stopImmediatePropagation(); const match = item.getAttribute('onclick')?.match(/'([^']+)'/); if (match) showDrinkPhoto(match[1]); }, true);
   window.toggleMenuEdit = () => { if (!currentUser()?.isAdmin) { toast('Menu editing is available to administrators only'); return; } if (menuEditing) return openMenuSaveDialog(); menuEditing = true; menuDirty = false; setMenuOpen(true); const bar = document.getElementById('barMenu'); if (bar) { bar.querySelectorAll('[data-admin-editable]').forEach(el => el.contentEditable = 'true'); bar.classList.add('editing'); } renderMenu(); toast('Menu is ready to edit'); };

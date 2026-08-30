@@ -312,7 +312,7 @@
   async function createBrandedChatImage(src, caption) {
     const [photo, mark] = await Promise.all([
       loadCanvasImage(src),
-      loadCanvasImage('assets/bcd-karaoke-mark.svg'),
+      loadCanvasImage('assets/bcd-karaoke-logo.jpg'),
     ]);
     const width = photo.naturalWidth || photo.width;
     const height = photo.naturalHeight || photo.height;
