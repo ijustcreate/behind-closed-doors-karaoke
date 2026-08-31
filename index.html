@@ -78,6 +78,7 @@ const SONGS = [{"id":"tj-22481-0","title":"#thatPOWER","artist":"Will. I. Am","c
 const STORAGE_KEY='bcd_karaoke_state_v1';
 const SUPABASE_URL='https://dxmovgixxmepunzvgvrj.supabase.co';
 const SUPABASE_KEY='sb_publishable_YNB91eZ4vBqxYr4yNKtyPQ__zUQsGFk';
+window.BCD_SYNC_CONFIG={url:SUPABASE_URL,key:SUPABASE_KEY};
 const defaultState={users:[],currentUserId:null,requests:[],queue:[],history:[],favorites:[],genreOverrides:{},karaokeHostMode:false};
 let state=loadState();
 let activeTab='songbook';
@@ -118,6 +119,7 @@ let menuDidSwipe=false;
 
 function loadState(){try{return {...defaultState,...JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}')}}catch(e){return structuredClone(defaultState)}}
 function saveState(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state));updateBadges()}
+window.getBcdState=()=>state;
 function uid(prefix='id'){return prefix+'-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,8)}
 function norm(s=''){return s.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[’‘]/g,"'").trim()}
 function normTitle(s=''){return norm(s).replace(/[^a-z0-9]+/g,' ').trim()}

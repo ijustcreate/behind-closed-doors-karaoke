@@ -13,6 +13,17 @@ const validLanternOverride=(value:unknown)=>{
  const candidate=value as Record<string,unknown>,key=String(candidate.key||"");
  return /^\d{4}-\d{2}-\d{2}$/.test(key)&&typeof candidate.on==="boolean"?{key,on:candidate.on}:null;
 };
+const safeLibrary=(library:unknown,profileId:string)=>{
+ const source=library&&typeof library==="object"?library as Record<string,unknown>:{};
+ const favorites=(Array.isArray(source.favorites)?source.favorites:[]).slice(0,500).flatMap((item:any)=>{
+  const songId=String(item?.songId||"").slice(0,80);return songId?[{id:String(item?.id||crypto.randomUUID()).slice(0,100),userId:profileId,songId,createdAt:Number(item?.createdAt)||Date.now()}]:[];
+ });
+ const history=(Array.isArray(source.history)?source.history:[]).slice(0,1000).flatMap((item:any)=>{
+  const songId=String(item?.songId||"").slice(0,80),status=item?.status==="sung"?"sung":"requested";
+  return songId?[{id:String(item?.id||crypto.randomUUID()).slice(0,100),userId:profileId,songId,status,requestedAt:Number(item?.requestedAt)||Date.now(),completedAt:Number(item?.completedAt)||null,score:Number.isFinite(Number(item?.score))?Math.max(0,Math.min(100,Number(item.score))):undefined}]:[];
+ });
+ return {favorites,history};
+};
 
 Deno.serve(async(req)=>{
  if(req.method==="OPTIONS")return new Response("ok",{headers:cors});
@@ -31,6 +42,23 @@ Deno.serve(async(req)=>{
    if(error)throw error;
    const values=Object.fromEntries((data||[]).map((row:any)=>[row.setting_key,row.setting_value]));
    return json({karaokeHostMode:values.karaoke_host_mode===true,lanternOverride:validLanternOverride(values.lantern_override),chatbotEnabled:values.chatbot_enabled!==false});
+  }
+  if(body.action==="personal_library"){
+   const profileId=String(body.profileId||"");
+   if(!profileId)return json({error:"Profile is required"},400);
+   const {data:profile,error:profileError}=await admin.from("karaoke_profiles").select("id,password_hash,glyph_hash").eq("id",profileId).maybeSingle();
+   if(profileError)throw profileError;
+   if(!profile)return json({error:"Account not found"},404);
+   if(hasCredential(profile)&&!matchesCredential(profile,body.passwordHash,body.passwordFoldedHash))return json({error:"Profile authorization required"},401);
+   if(body.op==="save"){
+    const library=safeLibrary(body.library,profileId);
+    const {error}=await admin.from("karaoke_personal_libraries").upsert({profile_id:profileId,favorites:library.favorites,history:library.history,updated_at:new Date().toISOString()},{onConflict:"profile_id"});
+    if(error)throw error;
+    return json({status:"ok",library});
+   }
+   const {data,error}=await admin.from("karaoke_personal_libraries").select("favorites,history,updated_at").eq("profile_id",profileId).maybeSingle();
+   if(error)throw error;
+   return json({status:"ok",library:safeLibrary(data||{},profileId),updatedAt:data?.updated_at||null});
   }
   if(body.action==="set_chatbot_enabled"){
    const actor=await adminActor();

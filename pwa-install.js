@@ -12,6 +12,12 @@ if (!document.getElementById('bcd-info-script')) {
   bcdInfoScript.src = 'bcd-info.js?v=20260831-question-no-frame';
   document.head.append(bcdInfoScript);
 }
+if (!document.getElementById('personal-library-sync-script')) {
+  const personalLibrarySyncScript = document.createElement('script');
+  personalLibrarySyncScript.id = 'personal-library-sync-script';
+  personalLibrarySyncScript.src = 'personal-library-sync.js?v=20260831';
+  document.head.append(personalLibrarySyncScript);
+}
 
 (function () {
   'use strict';
