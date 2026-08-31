@@ -31,6 +31,18 @@ export function shouldReplyToMessage(row) {
     && isSummon(row.message);
 }
 
+export function chatbotSetting(rows) {
+  const allRows = Array.isArray(rows) ? rows : [];
+  const row = allRows.find(item => item?.setting_key === 'chatbot_enabled');
+  const menuRow = allRows.find(item => item?.setting_key === 'active_drink_menu');
+  const marker = String(menuRow?.setting_value?.subheader || '').match(/^\[\[BCD_CHATBOT:(ON|OFF)\]\]\s*/);
+  const source = row || (marker ? menuRow : null);
+  return {
+    enabled: row ? row.setting_value !== false : marker ? marker[1] === 'ON' : true,
+    changedAt: source?.updated_at ? Date.parse(source.updated_at) : null,
+  };
+}
+
 export function stripSummon(text) {
   return String(text || '')
     .replace(/(?:^|\s)@(?:bcd|house|doorman)\b[,:]?/ig, ' ')

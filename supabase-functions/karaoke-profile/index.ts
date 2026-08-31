@@ -27,10 +27,18 @@ Deno.serve(async(req)=>{
    return json({menu:data?.setting_value||null,updatedAt:data?.updated_at||null});
   }
   if(body.action==="get_room_settings"){
-   const {data,error}=await admin.from("karaoke_app_settings").select("setting_key,setting_value").in("setting_key",["karaoke_host_mode","lantern_override"]);
+   const {data,error}=await admin.from("karaoke_app_settings").select("setting_key,setting_value").in("setting_key",["karaoke_host_mode","lantern_override","chatbot_enabled"]);
    if(error)throw error;
    const values=Object.fromEntries((data||[]).map((row:any)=>[row.setting_key,row.setting_value]));
-   return json({karaokeHostMode:values.karaoke_host_mode===true,lanternOverride:validLanternOverride(values.lantern_override)});
+   return json({karaokeHostMode:values.karaoke_host_mode===true,lanternOverride:validLanternOverride(values.lantern_override),chatbotEnabled:values.chatbot_enabled!==false});
+  }
+  if(body.action==="set_chatbot_enabled"){
+   const actor=await adminActor();
+   if(!actor)return json({error:"Admin authorization required"},403);
+   const chatbotEnabled=body.chatbotEnabled!==false;
+   const {error}=await admin.from("karaoke_app_settings").upsert({setting_key:"chatbot_enabled",setting_value:chatbotEnabled,updated_at:new Date().toISOString()},{onConflict:"setting_key"});
+   if(error)throw error;
+   return json({status:"ok",chatbotEnabled});
   }
   if(body.action==="set_karaoke_host_mode"){
    const actor=await adminActor();

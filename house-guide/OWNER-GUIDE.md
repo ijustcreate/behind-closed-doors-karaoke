@@ -14,8 +14,9 @@ The computer only makes outbound connections. No router port-forwarding, inbound
 - Leave the computer connected to power and internet.
 - The display may turn off; the computer itself must not sleep while plugged in. The installed Startup shortcuts run after this Windows account signs in.
 - Ollama unloads the model five minutes after the last answer, reducing idle GPU memory and power.
+- Administrators can open **Admin settings → BCD Chatbot** on the website to turn the House Guide on or off for the whole room. The PC notices within about 15 seconds.
 - Look in `logs/house-guide.log` and `logs/ollama.log` when troubleshooting.
-- To stop the guide immediately, end the `node.exe` bot process and the Ollama process in Task Manager, or shut down the computer.
+- When the website switch is off, the bot does not read room chat or wake the language model; it checks only the tiny shared on/off flag. To stop every local process, end the `node.exe` bot process and the Ollama process in Task Manager, or shut down the computer.
 
 ## Updating public BCD knowledge
 
@@ -31,6 +32,7 @@ Restart the bot after editing knowledge. Temporary room chat is never copied int
 
 - Keep `MODEL_KEEP_ALIVE=5m` so the model leaves memory after quiet periods.
 - Keep replies short and `POLL_INTERVAL_MS` at 4000 or higher.
+- Keep `SETTINGS_POLL_INTERVAL_MS` at 15000 or higher so the off state uses only a very small network check.
 - Let Windows turn off the display after five minutes.
 - Use Windows Best power efficiency while plugged in if response speed remains acceptable.
 - Do not disable cooling fans or block ventilation when placing a laptop beneath the router.

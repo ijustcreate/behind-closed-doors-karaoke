@@ -2,7 +2,29 @@
   'use strict';
 
   const ROOM_SETTINGS_POLL_MS = 15000;
+  const CHATBOT_MENU_MARKER = /^\[\[BCD_CHATBOT:(ON|OFF)\]\]\s*/;
   let roomSettingsWriteInFlight = false;
+
+  function chatbotValueFromMenu(menu) {
+    const match = String(menu?.subheader || '').match(CHATBOT_MENU_MARKER);
+    return match ? match[1] === 'ON' : null;
+  }
+
+  async function legacyChatbotSetting() {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/karaoke-profile`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_active_menu' })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'Chatbot setting unavailable');
+    return { enabled: chatbotValueFromMenu(result.menu), menu: result.menu };
+  }
+
+  function menuWithChatbotSetting(menu, enabled) {
+    const humanSubheader = String(menu?.subheader || '').replace(CHATBOT_MENU_MARKER, '');
+    return { ...menu, subheader: `[[BCD_CHATBOT:${enabled ? 'ON' : 'OFF'}]]${humanSubheader}` };
+  }
 
   function lanternNightKey() {
     return new Intl.DateTimeFormat('en-CA', {
@@ -110,6 +132,23 @@
     row.innerHTML = `<div><strong>Manual lantern override</strong><p>Default schedule: Thursday-Saturday, 7 PM-2 AM. Resets at 5 AM.</p></div><label class="switch"><input id="lanternManualToggle" type="checkbox" ${lanternIsOn() ? 'checked' : ''} onchange="setLanternManual(this.checked)" aria-label="Manual lantern override"><span></span></label>`;
   }
 
+  function renderChatbotControl() {
+    const modal = document.querySelector('#settingsModal .modal');
+    const status = document.getElementById('hostModeStatus');
+    if (!modal || !status) return;
+
+    const rows = [...modal.querySelectorAll('.chatbotSetting')];
+    let row = rows.shift();
+    rows.forEach(item => item.remove());
+    if (!row) {
+      row = document.createElement('div');
+      row.className = 'settingRow chatbotSetting';
+      status.insertAdjacentElement('afterend', row);
+    }
+    const enabled = state.chatbotEnabled !== false;
+    row.innerHTML = `<div><strong>BCD Chatbot</strong><p>${enabled ? 'On — replies only when someone speaks to @BCD.' : 'Off — the House Guide will not read or answer room chat.'}</p></div><label class="switch"><input id="chatbotEnabledToggle" type="checkbox" ${enabled ? 'checked' : ''} onchange="setChatbotEnabled(this.checked)" aria-label="BCD Chatbot"><span></span></label>`;
+  }
+
   async function syncSharedRoomSettings() {
     if (roomSettingsWriteInFlight) return;
     try {
@@ -121,18 +160,26 @@
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'Room settings unavailable');
 
+      let sharedChatbotEnabled = result.chatbotEnabled;
+      if (typeof sharedChatbotEnabled !== 'boolean') {
+        const legacy = await legacyChatbotSetting();
+        sharedChatbotEnabled = legacy.enabled ?? true;
+      }
       const hostModeChanged = state.karaokeHostMode !== !!result.karaokeHostMode;
+      const chatbotChanged = state.chatbotEnabled !== sharedChatbotEnabled;
       const previousOverride = JSON.stringify(state.lanternOverride || null);
       state.karaokeHostMode = !!result.karaokeHostMode;
+      state.chatbotEnabled = sharedChatbotEnabled;
       const remoteOverride = result.lanternOverride;
       if (remoteOverride?.key === lanternNightKey()) state.lanternOverride = remoteOverride;
       else delete state.lanternOverride;
-      if (hostModeChanged || previousOverride !== JSON.stringify(state.lanternOverride || null)) saveState();
+      if (hostModeChanged || chatbotChanged || previousOverride !== JSON.stringify(state.lanternOverride || null)) saveState();
       if (hostModeChanged) {
         applyHostMode();
         if (state.karaokeHostMode) syncSharedBoard();
       }
       refreshNavigation();
+      renderChatbotControl();
       renderLanternControl();
       updateSongbookLantern();
     } catch (error) {
@@ -206,10 +253,45 @@
     }
   };
 
+  window.setChatbotEnabled = async function (enabled) {
+    const user = currentUser();
+    if (!user?.isAdmin) {
+      toast('Chatbot controls are available to administrators only.');
+      return;
+    }
+    const prior = state.chatbotEnabled !== false;
+    state.chatbotEnabled = !!enabled;
+    saveState();
+    renderChatbotControl();
+    roomSettingsWriteInFlight = true;
+    try {
+      try {
+        await adminProfileAction('set_chatbot_enabled', { chatbotEnabled: state.chatbotEnabled });
+      } catch (error) {
+        // Older deployments store the same flag in the hidden portion of the
+        // already permissioned active-menu record until the function update lands.
+        const legacy = await legacyChatbotSetting();
+        if (!legacy.menu) throw error;
+        await adminProfileAction('set_active_menu', { menu: menuWithChatbotSetting(legacy.menu, state.chatbotEnabled) });
+      }
+      toast(state.chatbotEnabled ? 'BCD Chatbot is on' : 'BCD Chatbot is off');
+    } catch (error) {
+      state.chatbotEnabled = prior;
+      saveState();
+      renderChatbotControl();
+      toast(error.message || 'Chatbot setting could not be updated');
+    } finally {
+      roomSettingsWriteInFlight = false;
+    }
+  };
+
   const previousOpenSettings = window.openSettings;
   window.openSettings = function () {
     const result = previousOpenSettings.apply(this, arguments);
-    setTimeout(renderLanternControl, 0);
+    setTimeout(() => {
+      renderChatbotControl();
+      renderLanternControl();
+    }, 0);
     syncSharedRoomSettings();
     return result;
   };
@@ -306,6 +388,7 @@
       .tab.hasNotification .badgeCount{position:absolute!important;right:-3px!important;top:2px!important;min-width:16px!important;height:16px!important;padding:0 4px!important;margin:0!important;border:1px solid #d3a851!important;box-shadow:0 0 0 2px #17100c!important;font-size:9px!important;line-height:16px!important}
       #profileView .viewHero{position:relative!important;padding-right:132px!important}
       #profileAdminSettingsButton{position:absolute!important;right:12px!important;top:12px!important;margin:0!important}
+      .chatbotSetting{margin-top:12px!important}
       @media(max-width:620px){
         .tab.hasNotification .badgeCount{right:-1px!important;top:0!important}
         #profileView .viewHero{padding-right:116px!important}

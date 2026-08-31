@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { buildPrompt, cleanModelReply, deterministicReplyId, loadEnv, relevantFacts, shouldReplyToMessage, songSearch } from './lib.mjs';
+import { buildPrompt, chatbotSetting, cleanModelReply, deterministicReplyId, loadEnv, relevantFacts, shouldReplyToMessage, songSearch } from './lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.join(HERE, '.env'));
@@ -13,6 +13,7 @@ const settings = {
   ollamaUrl: process.env.OLLAMA_URL || 'http://127.0.0.1:11434',
   model: process.env.OLLAMA_MODEL || 'llama3.2:3b',
   pollMs: Number(process.env.POLL_INTERVAL_MS || 4000),
+  settingsPollMs: Number(process.env.SETTINGS_POLL_INTERVAL_MS || 15000),
   contextMinutes: Number(process.env.ROOM_CONTEXT_MINUTES || 80),
   keepAlive: process.env.MODEL_KEEP_ALIVE || '5m',
   dryRun: String(process.env.DRY_RUN || '').toLowerCase() === 'true',
@@ -29,6 +30,9 @@ const songs = JSON.parse(fs.readFileSync(path.join(HERE, '..', 'songs.json'), 'u
 const knowledge = Object.fromEntries(fs.readdirSync(path.join(HERE, 'knowledge')).filter(file => file.endsWith('.json')).map(file => [file, JSON.parse(fs.readFileSync(path.join(HERE, 'knowledge', file), 'utf8'))]));
 const handled = new Set();
 let busy = false;
+let chatbotEnabled = true;
+let chatbotChangedAt = null;
+let settingsCheckedAt = 0;
 
 function log(message, details = '') {
   console.log(`${new Date().toISOString()} ${message}${details ? ` ${details}` : ''}`);
@@ -50,6 +54,22 @@ async function fetchRoom() {
     limit: '80',
   });
   return request(`${settings.supabaseUrl}/rest/v1/karaoke_chat_messages?${query}`, { headers: apiHeaders });
+}
+
+async function refreshChatbotSetting(force = false) {
+  if (!force && Date.now() - settingsCheckedAt < settings.settingsPollMs) return chatbotEnabled;
+  const query = new URLSearchParams({
+    setting_key: 'in.(chatbot_enabled,active_drink_menu)',
+    select: 'setting_key,setting_value,updated_at',
+    limit: '2',
+  });
+  const rows = await request(`${settings.supabaseUrl}/rest/v1/karaoke_app_settings?${query}`, { headers: apiHeaders });
+  const next = chatbotSetting(rows);
+  if (next.enabled !== chatbotEnabled) log(next.enabled ? 'Chatbot enabled' : 'Chatbot disabled');
+  chatbotEnabled = next.enabled;
+  chatbotChangedAt = Number.isFinite(next.changedAt) ? next.changedAt : null;
+  settingsCheckedAt = Date.now();
+  return chatbotEnabled;
 }
 
 async function ollamaHealth() {
@@ -118,16 +138,22 @@ async function cycle() {
   if (busy) return;
   busy = true;
   try {
+    if (!(await refreshChatbotSetting())) return;
     const room = await fetchRoom();
     const existingIds = new Set(room.map(row => row.id));
     const candidates = room.filter(shouldReplyToMessage);
     for (const source of candidates) {
+      if (chatbotChangedAt && Date.parse(source.created_at) < chatbotChangedAt) continue;
       const replyId = deterministicReplyId(source.id);
       if (handled.has(source.id) || existingIds.has(replyId)) continue;
       handled.add(source.id);
       log('Summoned by', `${source.singer_name}: ${String(source.message).slice(0, 120)}`);
       try {
         const message = await answer(source, room);
+        if (!(await refreshChatbotSetting(true))) {
+          log('Reply discarded because the chatbot was turned off');
+          continue;
+        }
         await postReply(source, message);
         log('Replied', message);
       } catch (error) {
@@ -144,12 +170,12 @@ async function cycle() {
 
 async function main() {
   if (process.argv.includes('--health')) {
-    const [tags, room] = await Promise.all([ollamaHealth(), fetchRoom()]);
+    const [tags, room, enabled] = await Promise.all([ollamaHealth(), fetchRoom(), refreshChatbotSetting(true)]);
     const installed = (tags.models || []).map(model => model.name);
-    console.log(JSON.stringify({ ok: installed.some(name => name.startsWith(settings.model.split(':')[0])), model: settings.model, installed, recentChatRows: room.length }, null, 2));
+    console.log(JSON.stringify({ ok: installed.some(name => name.startsWith(settings.model.split(':')[0])), model: settings.model, installed, chatbotEnabled: enabled, recentChatRows: room.length }, null, 2));
     return;
   }
-  log('Starting BCD House Guide', `model=${settings.model} context=${settings.contextMinutes}m poll=${settings.pollMs}ms${settings.dryRun ? ' DRY-RUN' : ''}`);
+  log('Starting BCD House Guide', `model=${settings.model} context=${settings.contextMinutes}m poll=${settings.pollMs}ms settings=${settings.settingsPollMs}ms${settings.dryRun ? ' DRY-RUN' : ''}`);
   await cycle();
   if (process.argv.includes('--once')) return;
   setInterval(cycle, Math.max(2000, settings.pollMs));
