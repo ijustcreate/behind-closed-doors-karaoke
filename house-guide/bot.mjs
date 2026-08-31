@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { buildPrompt, deterministicReplyId, loadEnv, relevantFacts, shouldReplyToMessage, songSearch } from './lib.mjs';
+import { buildPrompt, cleanModelReply, deterministicReplyId, loadEnv, relevantFacts, shouldReplyToMessage, songSearch } from './lib.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.join(HERE, '.env'));
@@ -64,7 +64,7 @@ async function answer(source, roomMessages) {
     facts: relevantFacts(knowledge, query),
     songs: songSearch(songs, query),
   });
-  const result = await request(`${settings.ollamaUrl}/api/chat`, {
+  const generate = (extraInstruction = '', numPredict = 320) => request(`${settings.ollamaUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -74,16 +74,20 @@ async function answer(source, roomMessages) {
       keep_alive: settings.keepAlive,
       messages: [
         { role: 'system', content: `/no_think\n${prompt.system}\nReturn only the final guest-facing answer; never show analysis or hidden reasoning.` },
-        { role: 'user', content: `/no_think\n${prompt.user}` },
+        { role: 'user', content: `/no_think\n${prompt.user}${extraInstruction}` },
       ],
-      options: { temperature: 0.25, top_p: 0.8, num_ctx: 8192, num_predict: 120, repeat_penalty: 1.08 },
+      options: { temperature: 0.25, top_p: 0.8, num_ctx: 8192, num_predict: numPredict, repeat_penalty: 1.08 },
     }),
   });
+  let result = await generate();
+  if (result?.done_reason === 'length') {
+    const draft = cleanModelReply(result?.message?.content);
+    log('Model reached its reply limit; rewriting compactly');
+    result = await generate(`\n\nINCOMPLETE DRAFT:\n${draft}\n\nRewrite this as a complete answer under 450 characters. Keep the useful facts, finish every item, and do not trail off.`, 240);
+  }
   const rawContent = String(result?.message?.content || '').trim();
-  const content = (rawContent.includes('</think>') ? rawContent.split('</think>').pop() : rawContent)
-    .replace(/^<think>[\s\S]*?<\/think>\s*/i, '')
-    .trim()
-    .slice(0, 1000);
+  const finalContent = rawContent.includes('</think>') ? rawContent.split('</think>').pop() : rawContent;
+  const content = cleanModelReply(finalContent, { limited: result?.done_reason === 'length' });
   if (!content) throw new Error('The local model returned an empty answer');
   return content;
 }

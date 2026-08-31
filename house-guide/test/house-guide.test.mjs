@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { compactRoom, deterministicReplyId, isSummon, relevantFacts, shouldReplyToMessage, songSearch, stripSummon } from '../lib.mjs';
+import { cleanModelReply, compactRoom, deterministicReplyId, isSummon, relevantFacts, shouldReplyToMessage, songSearch, stripSummon } from '../lib.mjs';
 
 test('only explicit house-guide summons trigger', () => {
   assert.equal(isSummon('@BCD do we have Wonderwall?'), true);
@@ -20,6 +20,11 @@ test('the guide never initiates or replies to ordinary room chat', () => {
 
 test('summon is removed from the user question', () => {
   assert.equal(stripSummon('@BCD, do we have Wonderwall?'), 'do we have Wonderwall?');
+});
+
+test('a token-limited model reply stops at its last complete sentence', () => {
+  const reply = cleanModelReply('First recommendation is complete. Second recommendation trails off at a classic', { limited: true });
+  assert.equal(reply, 'First recommendation is complete.');
 });
 
 test('reply IDs are stable and distinct', () => {
