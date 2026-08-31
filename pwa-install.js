@@ -307,7 +307,7 @@ if (!document.getElementById('bcd-info-script')) {
     }
     ensureInstallButton();
     restoreCookieSession();
-    document.head.insertAdjacentHTML('beforeend', '<style>.monogram,.landingKey,.coverKey,.menuKey,.clubWelcomeMark,.clubGateIcon,.glyphCoreIcon,.bcdInfoMark{background-color:transparent!important;background-image:url("assets/bcd-key-logo-transparent.webp")!important}.clubContinueKey{mask-image:url("assets/bcd-key-logo-transparent.webp")!important;-webkit-mask-image:url("assets/bcd-key-logo-transparent.webp")!important}</style>');
+    document.head.insertAdjacentHTML('beforeend', '<style>.monogram,.landingKey,.coverKey,.menuKey,.clubWelcomeMark,.clubGateIcon,.glyphCoreIcon,.bcdInfoMark{background-color:transparent!important;background-image:url("assets/bcd-key-logo-transparent.webp")!important}body:not(.member-signed-in) .brand>.monogram{filter:saturate(.66)!important}.clubContinueKey{mask-image:url("assets/bcd-key-logo-transparent.webp")!important;-webkit-mask-image:url("assets/bcd-key-logo-transparent.webp")!important}</style>');
     document.head.insertAdjacentHTML('beforeend', '<style>.brandrow:after,.aboutVenueButton{background-color:transparent!important;background-image:url("assets/bcd-question-logo-transparent.webp")!important;filter:saturate(.62) brightness(.86)}.member-signed-in .monogram{background-color:transparent!important;background-image:url("assets/bcd-karaoke-logo-transparent.webp")!important}</style>');
     const replaceLegacyKeyImages = root => root.querySelectorAll?.('img[src="assets/bcd-key-mark.svg"],img[src="assets/bcd-key-logo.jpg"]').forEach(image => { image.src = 'assets/bcd-key-logo-transparent.png'; });
     replaceLegacyKeyImages(document);
