@@ -3,7 +3,7 @@
 
   const LOCAL_PREVIEW = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('encore-dev') === '1';
   const TUG_THRESHOLD = 285;
-  const GAME_URL = window.ENCORE_ROYALE_URL || './encore-royale/dist/index.html?embed=1';
+  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/Celestefall/?embed=1&from=bcd';
   const navigatorWithStandalone = navigator;
   const journey = { started:false, invalid:false, maxScroll:0 };
   let portal = null;
@@ -80,8 +80,8 @@
     portal = document.createElement('section');
     portal.id = 'encorePortal';
     portal.className = 'encore-portal';
-    portal.setAttribute('aria-label', 'Secret Encore Royale entrance');
-    portal.innerHTML = `<iframe title="Encore Royale" allow="fullscreen; gamepad" src="${GAME_URL}"></iframe><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">×</button>`;
+    portal.setAttribute('aria-label', 'Secret Celestefall entrance');
+    portal.innerHTML = `<iframe title="Celestefall" allow="fullscreen; gamepad" src="${GAME_URL}"></iframe><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">×</button>`;
     document.body.append(portal);
     frame = portal.querySelector('iframe');
     portal.querySelector('.encore-portal-close').addEventListener('click', closePortal);
@@ -89,7 +89,10 @@
   }
 
   function sendSession() {
-    if (!frame?.contentWindow) return;
+    // The isolated game announces readiness after navigation. Waiting for that
+    // handshake avoids posting private session context into the iframe's
+    // initial about:blank document and prevents cross-origin console noise.
+    if (!ready || !frame?.contentWindow) return;
     let targetOrigin = '*';
     try { targetOrigin = new URL(frame.src, location.href).origin; } catch {}
     frame.contentWindow.postMessage({ type:'bcd:encore:init', payload:initPayload() }, targetOrigin);
@@ -187,18 +190,19 @@
     launcher = document.createElement('section');
     launcher.id = 'encoreRoyalAdminLauncher';
     launcher.className = 'encore-admin-launcher';
-    launcher.innerHTML = `<div class="encore-admin-copy"><div class="eyebrow">Installed app · administrator preview</div><h2>Encore Royale</h2><p>Bypass the secret songbook pull and enter the isolated game build directly.</p></div><button type="button" class="btn gold encore-launch-button">Enter the arena</button>`;
+    launcher.innerHTML = `<div class="encore-admin-copy"><div class="eyebrow">Installed app · administrator preview</div><h2>Celestefall</h2><p>Bypass the secret songbook pull and enter the isolated game build directly.</p></div><button type="button" class="btn gold encore-launch-button">Enter Celestefall</button>`;
     launcher.querySelector('button').addEventListener('click', () => commitPortal({ instant:true }));
     profile.append(launcher);
   }
 
   window.openEncoreRoyale = function () {
     if (!isInstalled()) {
-      if (typeof toast === 'function') toast('Encore Royale is only available in the installed BCDKC app');
+      if (typeof toast === 'function') toast('Celestefall is only available in the installed BCDKC app');
       return;
     }
     commitPortal({ instant:true });
   };
+  window.openCelestefall = window.openEncoreRoyale;
   window.closeEncoreRoyale = closePortal;
   window.render_game_to_text = function () {
     const launcherState = { mode:committed ? 'loading-game' : 'karaoke-site', installed:isInstalled(), fullCatalog:fullCatalogActive(), journeyStarted:journey.started, journeyInvalid:journey.invalid, atBottom:atDocumentBottom(), tug:Math.round(rawTug) };
