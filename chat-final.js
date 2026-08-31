@@ -484,7 +484,7 @@
     input.maxLength = 1000;
     input.removeAttribute('style');
     input.className = 'control';
-    form.innerHTML = '<div id="chatDraftPreviews" class="chatAttachments" hidden></div><div class="chatComposeGrid"><div class="chatTextWrap"><div id="chatTokenCount" class="chatTokenCount" aria-live="polite">0/1000</div></div><div class="chatComposeActions"><button class="btn gold chatSend" type="submit">Send</button><button class="btn ghost chatPlus" type="button" aria-label="Add pictures">+</button></div></div>';
+    form.innerHTML = '<div id="chatDraftPreviews" class="chatAttachments" hidden></div><div class="chatComposeGrid"><div class="chatTextWrap"><div id="chatTokenCount" class="chatTokenCount" aria-live="polite">0/1000</div></div><div class="chatComposeActions"><button class="btn gold chatSend" type="submit">Send</button><button class="btn ghost chatPlus" type="button" aria-label="Add pictures">+</button></div></div><p class="chatRetentionNote">Sent messages and pictures stay in the chat room for one hour, then disappear.</p>';
     form.querySelector('.chatTextWrap').append(input);
     input.placeholder = 'Message the room…';
     input.addEventListener('input', updateComposer);
