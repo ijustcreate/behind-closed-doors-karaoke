@@ -9,7 +9,7 @@ if (!document.getElementById('bcdkc-member-touch-icon')) {
 if (!document.getElementById('bcd-info-script')) {
   const bcdInfoScript = document.createElement('script');
   bcdInfoScript.id = 'bcd-info-script';
-  bcdInfoScript.src = 'bcd-info.js?v=20260830-wider-copy';
+  bcdInfoScript.src = 'bcd-info.js?v=20260830-compact-panel';
   document.head.append(bcdInfoScript);
 }
 
