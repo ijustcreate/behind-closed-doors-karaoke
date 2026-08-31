@@ -3,7 +3,7 @@
 
   const LOCAL_PREVIEW = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('encore-dev') === '1';
   const TUG_THRESHOLD = 285;
-  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/Celestefall/?embed=1&from=bcd&build=control-layout';
+  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/Celestefall/?embed=1&from=bcd&build=directional-sword';
   const navigatorWithStandalone = navigator;
   const journey = { started:false, invalid:false, maxScroll:0 };
   let portal = null;
