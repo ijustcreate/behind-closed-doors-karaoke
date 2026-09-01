@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chatbotSetting, cleanModelReply, compactRoom, deterministicReplyId, isSummon, relevantFacts, shouldReplyToMessage, songSearch, stripSummon } from '../lib.mjs';
+import { buildPrompt, chatbotSetting, cleanModelReply, compactRoom, deterministicReplyId, hasPrivateImageEvidence, isSummon, needsRoomImageEvidence, relevantFacts, shouldReplyToMessage, songSearch, stripSummon } from '../lib.mjs';
+import { moderationVerdict } from '../vision.mjs';
 
 test('only explicit house-guide summons trigger', () => {
   assert.equal(isSummon('@BCD do we have Wonderwall?'), true);
@@ -57,6 +58,39 @@ test('room compaction retains every message in order', () => {
   assert.ok(compact.indexOf('first') < compact.indexOf('second'));
   assert.match(compact, /A: first/);
   assert.match(compact, /B: second/);
+});
+
+test('private image descriptions become bot-only room context', () => {
+  const compact = compactRoom([{
+    singer_name: 'A',
+    message: 'look at this',
+    image_urls: ['data:image/jpeg;base64,abc'],
+    private_image_captions: ['A cocktail menu listing a Vino Colada.'],
+    created_at: '2026-08-30T01:00:00Z',
+  }]);
+  assert.match(compact, /PRIVATE IMAGE CONTEXT: A cocktail menu/);
+  assert.doesNotMatch(compact, /description pending/);
+});
+
+test('room-image questions require actual private visual evidence', () => {
+  assert.equal(needsRoomImageEvidence('@BCD what do these posted images look like?'), true);
+  assert.equal(needsRoomImageEvidence('@BCD what does the BCD logo look like?'), false);
+  assert.equal(hasPrivateImageEvidence([{ image_urls: ['photo.jpg'], private_image_captions: [] }]), false);
+  assert.equal(hasPrivateImageEvidence([{ private_image_captions: ['A gold microphone on a dark background.'] }]), true);
+  const prompt = buildPrompt({
+    source: { singer_name: 'Felix', message: '@BCD what is this image?' },
+    roomMessages: [],
+    facts: [],
+    songs: [],
+  });
+  assert.match(prompt.user, /VISUAL EVIDENCE AVAILABLE: NO/);
+  assert.match(prompt.system, /Never describe a room image unless/);
+});
+
+test('explicit detections drive a reversible sensitive-media warning', () => {
+  assert.equal(moderationVerdict([{ class: 'FEMALE_BREAST_EXPOSED', score: 0.8 }]).status, 'sensitive');
+  assert.equal(moderationVerdict([{ class: 'FEMALE_BREAST_EXPOSED', score: 0.22 }]).status, 'unknown');
+  assert.equal(moderationVerdict([{ class: 'FACE_FEMALE', score: 0.99 }]).status, 'safe');
 });
 
 test('fact retrieval prefers relevant approved facts', () => {

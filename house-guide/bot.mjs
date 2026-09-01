@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
-import { buildPrompt, chatbotSetting, cleanModelReply, deterministicReplyId, loadEnv, relevantFacts, shouldReplyToMessage, songSearch } from './lib.mjs';
+import { buildPrompt, chatbotSetting, cleanModelReply, deterministicReplyId, hasPrivateImageEvidence, loadEnv, needsRoomImageEvidence, relevantFacts, shouldReplyToMessage, songSearch } from './lib.mjs';
+import { analyzePendingImages, attachPrivateImageContext } from './vision.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.join(HERE, '.env'));
@@ -16,6 +17,11 @@ const settings = {
   settingsPollMs: Number(process.env.SETTINGS_POLL_INTERVAL_MS || 15000),
   contextMinutes: Number(process.env.ROOM_CONTEXT_MINUTES || 80),
   keepAlive: process.env.MODEL_KEEP_ALIVE || '5m',
+  visionModel: process.env.VISION_MODEL || 'gemma3:4b',
+  visionKeepAlive: process.env.VISION_KEEP_ALIVE || '0',
+  visionPython: process.env.VISION_PYTHON || path.join(HERE, '.venv-vision', 'Scripts', 'python.exe'),
+  moderatorScript: path.join(HERE, 'moderate-image.py'),
+  workerSecret: process.env.VISION_WORKER_SECRET || '',
   dryRun: String(process.env.DRY_RUN || '').toLowerCase() === 'true',
 };
 
@@ -49,7 +55,7 @@ async function fetchRoom() {
   const since = new Date(Date.now() - settings.contextMinutes * 60_000).toISOString();
   const query = new URLSearchParams({
     created_at: `gte.${since}`,
-    select: 'id,profile_id,singer_name,message,image_urls,night_key,created_at',
+    select: 'id,profile_id,singer_name,message,image_urls,image_states,night_key,created_at',
     order: 'created_at.asc',
     limit: '80',
   });
@@ -78,6 +84,9 @@ async function ollamaHealth() {
 
 async function answer(source, roomMessages) {
   const query = String(source.message || '');
+  if (needsRoomImageEvidence(query) && !hasPrivateImageEvidence(roomMessages)) {
+    return `I can't currently see that room image. Please repost it and tag @BCD again, and I'll take a look.`;
+  }
   const prompt = buildPrompt({
     source,
     roomMessages,
@@ -138,8 +147,13 @@ async function cycle() {
   if (busy) return;
   busy = true;
   try {
-    if (!(await refreshChatbotSetting())) return;
-    const room = await fetchRoom();
+    const enabled = await refreshChatbotSetting();
+    let room = await fetchRoom();
+    if (settings.workerSecret) {
+      await analyzePendingImages({ room, settings, log });
+      room = await attachPrivateImageContext({ room, settings });
+    }
+    if (!enabled) return;
     const existingIds = new Set(room.map(row => row.id));
     const candidates = room.filter(shouldReplyToMessage);
     for (const source of candidates) {
@@ -172,10 +186,12 @@ async function main() {
   if (process.argv.includes('--health')) {
     const [tags, room, enabled] = await Promise.all([ollamaHealth(), fetchRoom(), refreshChatbotSetting(true)]);
     const installed = (tags.models || []).map(model => model.name);
-    console.log(JSON.stringify({ ok: installed.some(name => name.startsWith(settings.model.split(':')[0])), model: settings.model, installed, chatbotEnabled: enabled, recentChatRows: room.length }, null, 2));
+    const textReady = installed.some(name => name.startsWith(settings.model.split(':')[0]));
+    const visionReady = installed.some(name => name.startsWith(settings.visionModel.split(':')[0]));
+    console.log(JSON.stringify({ ok: textReady && visionReady && Boolean(settings.workerSecret), model: settings.model, visionModel: settings.visionModel, visionReady, workerConfigured: Boolean(settings.workerSecret), installed, chatbotEnabled: enabled, recentChatRows: room.length }, null, 2));
     return;
   }
-  log('Starting BCD House Guide', `model=${settings.model} context=${settings.contextMinutes}m poll=${settings.pollMs}ms settings=${settings.settingsPollMs}ms${settings.dryRun ? ' DRY-RUN' : ''}`);
+  log('Starting BCD House Guide', `model=${settings.model} vision=${settings.visionModel} context=${settings.contextMinutes}m poll=${settings.pollMs}ms settings=${settings.settingsPollMs}ms${settings.workerSecret ? '' : ' VISION-NOT-CONFIGURED'}${settings.dryRun ? ' DRY-RUN' : ''}`);
   await cycle();
   if (process.argv.includes('--once')) return;
   setInterval(cycle, Math.max(2000, settings.pollMs));

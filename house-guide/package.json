@@ -7,6 +7,7 @@
     "start": "node bot.mjs",
     "once": "node bot.mjs --once",
     "health": "node bot.mjs --health",
+    "configure-vision": "node configure-vision.mjs",
     "test": "node --test"
   },
   "engines": {

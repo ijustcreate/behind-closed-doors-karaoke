@@ -6,6 +6,7 @@
   const EDIT_WINDOW_MS = 5 * 60 * 1000;
   // This stays in the sender's browser only. It is never stored with the chat message.
   const pendingBcdReplies = new Map();
+  const revealedChatImages = new Set();
 
   function summonsBcd(text) {
     return /(?:^|\s)@bcd\b/i.test(text) || /(?:^|\s)hey\s+bcd\b/i.test(text);
@@ -42,7 +43,17 @@
   function messageImages(message) {
     const images = Array.isArray(message.images) ? message.images : [];
     if (!images.length) return '';
-    return `<div class="chatMessageImages ${images.length > 1 ? 'multiple' : ''}">${images.map((src, index) => `<button type="button" class="chatImageThumb" data-image-index="${index}" aria-label="Open attached picture ${index + 1}"><img src="${esc(src)}" alt="Attached picture ${index + 1}"></button>`).join('')}</div>`;
+    const states = Array.isArray(message.imageStates) ? message.imageStates : [];
+    return `<div class="chatMessageImages ${images.length > 1 ? 'multiple' : ''}">${images.map((src, index) => {
+      const rawState = states[index];
+      const state = ['safe', 'sensitive', 'unknown'].includes(rawState) ? rawState : 'pending';
+      const revealKey = `${message.id}:${index}`;
+      const revealed = revealedChatImages.has(revealKey);
+      const shielded = state !== 'safe' && !revealed;
+      const notice = state === 'pending' ? 'Checking image…' : 'Potentially sensitive — tap to view';
+      const aria = state === 'safe' || revealed ? `Open attached picture ${index + 1}` : notice;
+      return `<button type="button" class="chatImageThumb image-${state}${shielded ? ' shielded' : ''}${revealed ? ' revealed' : ''}" data-image-index="${index}" data-image-state="${state}" aria-label="${aria}"><img src="${esc(src)}" alt="Chat picture ${index + 1}">${shielded ? `<span class="chatImageSafety">${notice}</span>` : ''}</button>`;
+    }).join('')}</div>`;
   }
 
   window.renderChat = function () {
@@ -69,13 +80,14 @@
     chatSyncing = true;
     try {
       const since = encodeURIComponent(new Date(Date.now() - CHAT_WINDOW_MS).toISOString());
-      const rows = await sharedFetch(`karaoke_chat_messages?created_at=gte.${since}&select=id,profile_id,singer_name,message,created_at,edited_at,image_urls,reactions&order=created_at.asc&limit=80`, { headers: { Prefer: 'return=representation' } });
+      const rows = await sharedFetch(`karaoke_chat_messages?created_at=gte.${since}&select=id,profile_id,singer_name,message,created_at,edited_at,image_urls,image_states,reactions&order=created_at.asc&limit=80`, { headers: { Prefer: 'return=representation' } });
       chatMessages = rows.map(row => ({
         id: row.id,
         profileId: row.profile_id,
         singerName: row.singer_name,
         message: row.message || '',
         images: Array.isArray(row.image_urls) ? row.image_urls : [],
+        imageStates: Array.isArray(row.image_states) ? row.image_states : [],
         reactions: row.reactions && typeof row.reactions === 'object' ? row.reactions : {},
         createdAt: new Date(row.created_at).getTime(),
         editedAt: row.edited_at ? new Date(row.edited_at).getTime() : null,
@@ -248,7 +260,7 @@
     if (!ensureUser('Sign in to join Karaoke Chat')) return;
     const input = document.getElementById('chatInput'), text = input.value.trim(), user = currentUser();
     if (!text && !draftImages.length) return;
-    const row = { id: uid('chat'), profileId: user.id, singerName: user.name, message: text.slice(0, 1000), createdAt: Date.now(), images: draftImages.slice(), reactions: {} };
+    const row = { id: uid('chat'), profileId: user.id, singerName: user.name, message: text.slice(0, 1000), createdAt: Date.now(), images: draftImages.slice(), imageStates: [], reactions: {} };
     chatMessages.push(row);
     input.value = '';
     draftImages = [];
@@ -555,7 +567,7 @@
       @keyframes chatCountGlow{to{color:#f2bd58;text-shadow:0 0 8px rgba(224,161,60,.35)}}
       .chatRetentionNote{margin:7px 2px 0;color:#776e62;font:500 9px/1.35 ui-sans-serif,system-ui;text-align:center}.chatAttachments{display:flex!important;gap:6px;min-height:0;margin:0 0 7px!important;padding:0!important;overflow-x:auto}.chatAttachments[hidden]{display:none!important}.chatDraftThumb{position:relative;flex:0 0 46px;width:46px;height:46px;border:1px solid rgba(201,162,87,.38);border-radius:5px;background:#100b08}.chatDraftThumb img{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px}.chatDraftThumb button{position:absolute;right:-5px;top:-6px;display:grid;place-items:center;width:17px;height:17px;padding:0;border:1px solid #c9a257;border-radius:50%;background:#24120f;color:#f5dfb8;font:700 13px/1 ui-sans-serif;cursor:pointer}
       .chatMessage.bot{align-self:center!important;max-width:min(88%,680px)!important;border-color:rgba(224,183,82,.7)!important;background:linear-gradient(145deg,#2b2115,#14100b)!important;box-shadow:0 8px 24px rgba(0,0,0,.38),0 0 18px rgba(201,162,87,.08)!important}.chatPending{display:flex!important;align-items:center!important;min-width:48px!important;min-height:30px!important;padding:6px 12px!important;opacity:.86}.chatPendingDots{display:flex;align-items:center;gap:4px;height:14px}.chatPendingDots i{display:block;width:5px;height:5px;border-radius:50%;background:#ead29a;animation:bcdPendingDot 1.1s ease-in-out infinite}.chatPendingDots i:nth-child(2){animation-delay:.16s}.chatPendingDots i:nth-child(3){animation-delay:.32s}@keyframes bcdPendingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
-      .chatMessage{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.chatMessage:has(.chatReactionEdge){margin-bottom:12px}.chatMessageImages{display:grid;grid-template-columns:repeat(2,72px);gap:5px;margin-top:7px}.chatMessageImages:not(.multiple){grid-template-columns:112px}.chatImageThumb{display:block;width:72px;height:72px;padding:0;border:1px solid rgba(201,162,87,.32);border-radius:6px;overflow:hidden;background:#0b0806;cursor:pointer}.chatMessageImages:not(.multiple) .chatImageThumb{width:112px;height:96px}.chatImageThumb img{display:block;width:100%;height:100%;object-fit:cover}.chatReactionEdge{position:absolute;right:8px;bottom:-13px;display:flex;gap:3px;z-index:2}.chatMessage.other .chatReactionEdge{right:auto;left:8px}.chatReactionCount{display:flex;align-items:center;gap:2px;height:24px;padding:2px 6px;border:1px solid rgba(201,162,87,.38);border-radius:999px;background:#160f0b;color:#ead7b3;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.45)}.chatReactionCount small{font-size:9px;color:#a9997d}
+      .chatMessage{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.chatMessage:has(.chatReactionEdge){margin-bottom:12px}.chatMessageImages{display:grid;grid-template-columns:repeat(2,72px);gap:5px;margin-top:7px}.chatMessageImages:not(.multiple){grid-template-columns:112px}.chatImageThumb{position:relative;display:block;width:72px;height:72px;padding:0;border:1px solid rgba(201,162,87,.32);border-radius:6px;overflow:hidden;background:#0b0806;cursor:pointer}.chatMessageImages:not(.multiple) .chatImageThumb{width:112px;height:96px}.chatImageThumb img{display:block;width:100%;height:100%;object-fit:cover;transition:filter .18s,transform .18s}.chatImageThumb.shielded img{filter:blur(14px) brightness(.38);transform:scale(1.16)}.chatImageThumb.image-pending{cursor:wait}.chatImageSafety{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding:8px;background:rgba(9,6,4,.3);color:#ead7b3;text-align:center;font:700 9px/1.25 ui-sans-serif,system-ui;text-shadow:0 1px 4px #000}.chatReactionEdge{position:absolute;right:8px;bottom:-13px;display:flex;gap:3px;z-index:2}.chatMessage.other .chatReactionEdge{right:auto;left:8px}.chatReactionCount{display:flex;align-items:center;gap:2px;height:24px;padding:2px 6px;border:1px solid rgba(201,162,87,.38);border-radius:999px;background:#160f0b;color:#ead7b3;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.45)}.chatReactionCount small{font-size:9px;color:#a9997d}
       .chatActions{position:fixed!important;z-index:1100!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}.chatActions.ownActions{display:grid!important;min-width:220px!important;padding:5px!important;border:1px solid rgba(201,162,87,.72)!important;border-radius:6px!important;background:linear-gradient(145deg,#2b1a11,#100b08)!important;box-shadow:0 16px 42px rgba(0,0,0,.68)!important}.chatActions.ownActions button{padding:11px 12px!important;border:0!important;background:transparent!important;color:#efdbaf!important;text-align:left!important;font:600 12px ui-sans-serif,system-ui!important}.chatActions.ownActions button:hover{background:rgba(201,162,87,.14)!important}.chatActions.reactionActions{display:flex!important;gap:2px!important;padding:6px!important;border:1px solid rgba(201,162,87,.65)!important;border-radius:999px!important;background:#17100c!important;box-shadow:0 14px 36px rgba(0,0,0,.66)!important}.chatActions.reactionActions button{display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:transparent;font-size:22px;cursor:pointer;transition:transform .12s,background .12s}.chatActions.reactionActions button:hover,.chatActions.reactionActions button:focus{transform:scale(1.16);background:rgba(201,162,87,.14);outline:0}
       .chatEditing{width:min(78%,620px);box-sizing:border-box}.chatEditing textarea{min-height:78px!important;max-height:180px!important;resize:vertical!important}.chatImageModal .modal{display:flex;flex-direction:column;align-items:center;width:min(92vw,760px);max-width:760px}.chatImageStage{position:relative;max-width:100%;padding:7px;background:linear-gradient(145deg,#2d1d12,#080604);border:1px solid rgba(224,183,82,.75);box-shadow:0 0 0 1px rgba(255,226,154,.16) inset,0 18px 42px rgba(0,0,0,.52)}.chatImageStage:before,.chatImageStage:after{content:'';position:absolute;width:24px;height:24px;pointer-events:none}.chatImageStage:before{left:3px;top:3px;border-left:1px solid rgba(255,226,154,.78);border-top:1px solid rgba(255,226,154,.78)}.chatImageStage:after{right:3px;bottom:3px;border-right:1px solid rgba(255,226,154,.78);border-bottom:1px solid rgba(255,226,154,.78)}.chatImageModal img{display:block;max-width:100%;max-height:72vh;object-fit:contain;border:1px solid rgba(201,162,87,.4);background:#080604}.chatImageDownload{display:grid!important;place-items:center;width:42px!important;height:42px!important;margin-top:12px!important;padding:0!important}.chatImageDownload:disabled{cursor:wait!important;opacity:.65}.chatImageDownload svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
       @media(max-width:620px){[data-view="chat"]:not([hidden]){height:calc(100dvh - var(--chat-topbar-height,128px) - 18px);min-height:0}[data-view="chat"]>.viewHero{padding:12px 14px!important}.chatComposeGrid{grid-template-columns:minmax(0,1fr) 56px}.chatTextWrap #chatInput{min-height:74px!important}.chatSend,.chatPlus{width:56px!important}.chatMessageImages{grid-template-columns:repeat(2,64px)}.chatImageThumb{width:64px;height:64px}.chatMessageImages:not(.multiple){grid-template-columns:96px}.chatMessageImages:not(.multiple) .chatImageThumb{width:96px;height:84px}.chatActions.reactionActions button{width:34px;height:34px;font-size:20px}}
@@ -605,7 +617,18 @@
     if (!thumb) return;
     const article = thumb.closest('[data-chat-id]');
     const message = chatMessages.find(item => item.id === article?.dataset.chatId);
-    const src = message?.images?.[Number(thumb.dataset.imageIndex)];
+    const imageIndex = Number(thumb.dataset.imageIndex);
+    const state = thumb.dataset.imageState || 'pending';
+    if (state === 'pending') {
+      toast('This picture is still being checked');
+      return;
+    }
+    if ((state === 'sensitive' || state === 'unknown') && !thumb.classList.contains('revealed')) {
+      revealedChatImages.add(`${message?.id}:${imageIndex}`);
+      renderChat();
+      return;
+    }
+    const src = message?.images?.[imageIndex];
     if (src) openChatImage(src, message.message);
   });
 })();
