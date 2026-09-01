@@ -375,9 +375,10 @@
     setStatus('clubReturningStatus', 'Opening the door…');
     try {
       const credentialHash = await hashPassword(password);
-      const result = await sharedProfile(returningId, credentialHash, await hashPasswordFolded(password));
+      const foldedCredentialHash = await hashPasswordFolded(password);
+      const result = await sharedProfile(returningId, credentialHash, foldedCredentialHash);
       rememberLoginMethod(returningId, 'password');
-      finishMembership(result.profile, true, credentialHash);
+      finishMembership(result.profile, true, credentialHash, foldedCredentialHash);
     } catch (error) {
       setStatus('clubReturningStatus', 'That passcode wasn\'t right. Please try again, or use glyph sign-in instead.');
       document.getElementById('clubReturningPassword')?.focus();
@@ -497,12 +498,19 @@
     }, 80);
   }
 
-  function finishMembership(profile, protectedProfile, adminCredentialHash = null) {
+  function finishMembership(profile, protectedProfile, adminCredentialHash = null, adminFoldedCredentialHash = null) {
     const user = rememberSharedProfile(profile, protectedProfile);
     user.guest = false;
     user.remoteProfile = true;
     user.passwordHash = protectedProfile ? 'REMOTE' : null;
-    if (user.isAdmin && adminCredentialHash) { sessionStorage.setItem(`bcd-admin-${user.id}`, adminCredentialHash); localStorage.setItem(`bcd-admin-${user.id}`, adminCredentialHash); }
+    if (user.isAdmin && adminCredentialHash) {
+      sessionStorage.setItem(`bcd-admin-${user.id}`, adminCredentialHash);
+      localStorage.setItem(`bcd-admin-${user.id}`, adminCredentialHash);
+      if (adminFoldedCredentialHash) {
+        sessionStorage.setItem(`bcd-admin-folded-${user.id}`, adminFoldedCredentialHash);
+        localStorage.setItem(`bcd-admin-folded-${user.id}`, adminFoldedCredentialHash);
+      }
+    }
     state.currentUserId = user.id;
     saveState();
     closeMembershipModals();

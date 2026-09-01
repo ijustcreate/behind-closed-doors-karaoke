@@ -6,6 +6,10 @@ const cors = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 const allowedReactions = new Set(["👍", "❤️", "😂", "😮", "😢", "😡"]);
+const validCredential = (value: unknown) => typeof value === "string" && /^[0-9a-f]{64}$/i.test(value);
+const matchesCredential = (profile: any, credential: unknown, foldedCredential: unknown) =>
+  (validCredential(credential) && (profile?.password_hash === credential || profile?.glyph_hash === credential)) ||
+  (validCredential(foldedCredential) && profile?.password_hash === foldedCredential);
 const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), {
   status,
   headers: { ...cors, "Content-Type": "application/json" },
@@ -112,6 +116,34 @@ Deno.serve(async (req) => {
       const { error: stateError } = await admin.from("karaoke_chat_messages").update({ image_states: states }).eq("id", id);
       if (stateError) throw stateError;
       return json({ messageId: id, imageIndex, safetyStatus: status });
+    }
+
+    if (action === "moderator_delete") {
+      const id = String(body.messageId || "");
+      const actorId = String(body.actorId || "");
+      const actorCredential = body.actorCredential;
+      const actorCredentialFolded = body.actorCredentialFolded;
+      if (!id || id.length > 120 || !actorId || actorId.length > 80 || !validCredential(actorCredential)) {
+        return json({ error: "Administrator authorization required" }, 403);
+      }
+      const { data: actor, error: actorError } = await admin
+        .from("karaoke_profiles")
+        .select("id,is_admin,password_hash,glyph_hash")
+        .eq("id", actorId)
+        .maybeSingle();
+      if (actorError) throw actorError;
+      if (!actor?.is_admin || !matchesCredential(actor, actorCredential, actorCredentialFolded)) {
+        return json({ error: "Administrator authorization required" }, 403);
+      }
+      const { data: deleted, error: deleteError } = await admin
+        .from("karaoke_chat_messages")
+        .delete()
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
+      if (deleteError) throw deleteError;
+      if (!deleted) return json({ error: "Message not found" }, 404);
+      return json({ status: "deleted", messageId: deleted.id });
     }
 
     const id = String(body.messageId || "");
