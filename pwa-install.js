@@ -55,7 +55,7 @@ if (!document.getElementById('personal-library-sync-script')) {
   function ensureRefreshButton() {
     const actions = document.querySelector('#profileView .profileActions');
     let button = document.getElementById('bcdkcRefreshButton');
-    if (!isInstalled() || !actions || !updateAvailable) {
+    if (!isInstalled() || !actions) {
       button?.remove();
       return;
     }
@@ -64,11 +64,14 @@ if (!document.getElementById('personal-library-sync-script')) {
       button.type = 'button';
       button.id = 'bcdkcRefreshButton';
       button.className = 'btn gold small bcdkcRefreshButton';
-      button.textContent = 'Refresh App';
-      button.title = 'Check for the newest BCDKC version and reopen it.';
       button.addEventListener('click', refreshInstalledApp);
       actions.append(button);
     }
+    button.textContent = updateAvailable ? 'Update App' : 'Refresh App';
+    button.title = updateAvailable
+      ? 'A newer BCDKC version is ready. Tap to refresh.'
+      : 'Check for the newest BCDKC version and reopen it.';
+    button.classList.toggle('updateReady', updateAvailable);
   }
 
   function markUpdateAvailable() {
