@@ -67,11 +67,15 @@ if (!document.getElementById('personal-library-sync-script')) {
       button.addEventListener('click', refreshInstalledApp);
       actions.append(button);
     }
-    button.textContent = updateAvailable ? 'Update App' : 'Refresh App';
-    button.title = updateAvailable
+    const label = updateAvailable ? 'Update App' : 'Refresh App';
+    const title = updateAvailable
       ? 'A newer BCDKC version is ready. Tap to refresh.'
       : 'Check for the newest BCDKC version and reopen it.';
-    button.classList.toggle('updateReady', updateAvailable);
+    if (button.textContent !== label) button.textContent = label;
+    if (button.title !== title) button.title = title;
+    if (button.classList.contains('updateReady') !== updateAvailable) {
+      button.classList.toggle('updateReady', updateAvailable);
+    }
   }
 
   function markUpdateAvailable() {
