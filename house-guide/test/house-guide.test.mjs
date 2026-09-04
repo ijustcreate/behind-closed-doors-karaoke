@@ -1,13 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { buildPrompt, chatbotSetting, cleanModelReply, compactRoom, deterministicReplyId, hasPrivateImageEvidence, isSummon, needsRoomImageEvidence, relevantFacts, shouldReplyToMessage, songSearch, stripSummon } from '../lib.mjs';
-import { moderationVerdict } from '../vision.mjs';
+import { combineSafetyVerdicts, moderationVerdict } from '../vision.mjs';
 
 test('only explicit house-guide summons trigger', () => {
   assert.equal(isSummon('@BCD do we have Wonderwall?'), true);
   assert.equal(isSummon('Hey BCD, who mentioned a duet?'), true);
   assert.equal(isSummon('Hello BCD :)'), true);
   assert.equal(isSummon('Ask BCD: what is on the menu?'), true);
+  assert.equal(isSummon('Hey Alfie, what is playing tonight?'), true);
+  assert.equal(isSummon('@Alfie what can we sing?'), true);
+  assert.equal(isSummon('Hiya Alfie'), true);
   assert.equal(isSummon('I love the BCD Old Fashioned'), false);
   assert.equal(isSummon('BCD was busy tonight'), false);
   assert.equal(isSummon('normal room chat'), false);
@@ -29,6 +32,7 @@ test('chatbot setting is on by default and obeys the shared off switch', () => {
 
 test('summon is removed from the user question', () => {
   assert.equal(stripSummon('@BCD, do we have Wonderwall?'), 'do we have Wonderwall?');
+  assert.equal(stripSummon('Hey Alfie, what can we sing?'), 'what can we sing?');
 });
 
 test('a token-limited model reply stops at its last complete sentence', () => {
@@ -91,6 +95,11 @@ test('explicit detections drive a reversible sensitive-media warning', () => {
   assert.equal(moderationVerdict([{ class: 'FEMALE_BREAST_EXPOSED', score: 0.8 }]).status, 'sensitive');
   assert.equal(moderationVerdict([{ class: 'FEMALE_BREAST_EXPOSED', score: 0.22 }]).status, 'unknown');
   assert.equal(moderationVerdict([{ class: 'FACE_FEMALE', score: 0.99 }]).status, 'safe');
+});
+
+test('confirmed graphic violence is treated as sensitive while uncertain checks are not', () => {
+  assert.equal(combineSafetyVerdicts(moderationVerdict([]), { explicitSexual: false, graphicViolence: true }).status, 'sensitive');
+  assert.equal(combineSafetyVerdicts(moderationVerdict([]), { explicitSexual: false, graphicViolence: false }).status, 'safe');
 });
 
 test('fact retrieval prefers relevant approved facts', () => {

@@ -16,6 +16,8 @@ The computer only makes outbound connections. No router port-forwarding, inbound
 - Ollama unloads the text model five minutes after the last answer. The image model unloads immediately after each new picture, reducing idle memory and power.
 - Administrators can open **Admin settings → BCD Chatbot** on the website to turn the House Guide on or off for the whole room. The PC notices within about 15 seconds.
 - Look in `logs/house-guide.log` and `logs/ollama.log` when troubleshooting.
+- To see live bot activity, run `start-dashboard.cmd` and open `http://127.0.0.1:3434`. It shows Ollama reachability, installed and currently loaded models, plus real bot and image-model calls, outcomes, timestamps, latency, and errors. It is bound to this computer only and does not log guest messages, bot replies, pictures, or credentials. Use `start-bot-with-dashboard.cmd` when you want to launch the bot and dashboard together.
+- The dashboard’s **Live chat context**, **What BCD knows**, **Interactions & traces**, and **Filters & settings** tabs are owner-only local inspection tools. They can show room messages, images, and private image descriptions, so keep the dashboard on the dedicated BCD computer and do not share its URL or screen with guests.
 - When the website switch is off, the House Guide does not answer. New pictures are still checked and blurred when necessary so the room's safety layer remains active. To stop every local process, end the `node.exe` bot process and the Ollama process in Task Manager, or shut down the computer.
 
 ## Private image understanding
@@ -33,6 +35,7 @@ Edit the JSON files in `knowledge/`. Keep valid JSON punctuation and add only fa
 - `house.json`: venue, staff-approved facts, events, and opt-in regular profiles.
 - `menu.json`: drinks and public bar information.
 - `../songs.json`: the karaoke catalog used by both the website and the guide.
+- `owner-notes.json`: owner-entered BCD history, Stockton, theater/arts, sports, Miracle Mile, and community-event facts. The dashboard edits this file for you; add dates and a verification source for event information.
 
 Restart the bot after editing knowledge. Temporary room chat is never copied into these files.
 

@@ -9,7 +9,7 @@
   const revealedChatImages = new Set();
 
   function summonsBcd(text) {
-    return /(?:^|\s)@bcd\b/i.test(text) || /(?:^|\s)hey\s+bcd\b/i.test(text);
+    return /(?:^|\s)@(?:bcd|alfie)\b/i.test(text) || /(?:^|\s)(?:hey\s+)?(?:bcd|alfie)\b/i.test(text);
   }
   async function bcdReplyIdFor(sourceId) {
     const bytes = new TextEncoder().encode(String(sourceId));
@@ -61,10 +61,13 @@
       const state = ['safe', 'sensitive', 'unknown'].includes(rawState) ? rawState : 'pending';
       const revealKey = `${message.id}:${index}`;
       const revealed = revealedChatImages.has(revealKey);
-      const shielded = state !== 'safe' && !revealed;
-      const notice = state === 'pending' ? 'Checking image…' : 'Potentially sensitive — tap to view';
-      const aria = state === 'safe' || revealed ? `Open attached picture ${index + 1}` : notice;
-      return `<button type="button" class="chatImageThumb image-${state}${shielded ? ' shielded' : ''}${revealed ? ' revealed' : ''}" data-image-index="${index}" data-image-state="${state}" aria-label="${aria}"><img src="${esc(src)}" alt="Chat picture ${index + 1}">${shielded ? `<span class="chatImageSafety">${notice}</span>` : ''}</button>`;
+      // New images remain usable while the private worker checks them.  Only a
+      // confirmed sensitive result is covered; an unavailable/slow check is not
+      // treated as a finding and must not make the sender wait.
+      const shielded = state === 'sensitive' && !revealed;
+      const notice = 'Sensitive content';
+      const aria = shielded ? `${notice}. Tap to reveal image ${index + 1}` : `Open attached picture ${index + 1}`;
+      return `<button type="button" class="chatImageThumb image-${state}${shielded ? ' shielded' : ''}${revealed ? ' revealed' : ''}" data-image-index="${index}" data-image-state="${state}" aria-label="${aria}"><img src="${esc(src)}" alt="Chat picture ${index + 1}">${shielded ? `<span class="chatImageSafety"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Zm9.5 3.2a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4Z"/></svg><span>${notice}</span><small>Tap to reveal</small></span>` : ''}</button>`;
     }).join('')}</div>`;
   }
 
@@ -79,8 +82,9 @@
       const ownStyle = mine && color ? ` style="--own-chat-color:${color}"` : '';
       if (chatEditingId === message.id) return `<article class="chatMessage own chatEditing" data-chat-id="${esc(message.id)}"${ownStyle}><textarea id="editChatText" class="control" maxlength="1000">${esc(message.message || '')}</textarea><div class="editActions"><button class="btn gold small" type="button" onclick="saveChatEdit('${message.id}')">Save</button><button class="btn ghost small" type="button" onclick="cancelChatEdit()">Cancel</button></div></article>`;
       const reactions = reactionsFor(message);
-      const name = isBot ? 'BCD Host' : message.singerName;
-      return `<article class="chatMessage ${mine ? 'own' : isBot ? 'bot' : 'other'}" data-chat-id="${esc(message.id)}"${ownStyle}><div class="chatMessageHead"><strong>${esc(name)}</strong><time>${fmtTime(message.createdAt)}${message.editedAt ? ' · edited' : ''}</time></div>${message.message ? `<div class="chatMessageBody">${esc(message.message).replace(/\n/g, '<br>')}</div>` : ''}${messageImages(message)}${reactions ? `<div class="chatReactionEdge">${reactions}</div>` : ''}</article>`;
+      const name = isBot ? 'Alfie' : message.singerName;
+      const identity = isBot ? `<strong>${esc(name)}</strong><span class="chatHostBadge">BCD Host</span>` : `<strong>${esc(name)}</strong>`;
+      return `<article class="chatMessage ${mine ? 'own' : isBot ? 'bot' : 'other'}" data-chat-id="${esc(message.id)}"${ownStyle}><div class="chatMessageHead"><span class="chatMessageIdentity">${identity}</span><time>${fmtTime(message.createdAt)}${message.editedAt ? ' · edited' : ''}</time></div>${message.message ? `<div class="chatMessageBody">${esc(message.message).replace(/\n/g, '<br>')}</div>` : ''}${messageImages(message)}${reactions ? `<div class="chatReactionEdge">${reactions}</div>` : ''}</article>`;
     }).join('');
     list.innerHTML = messages || '<div class="chatEmpty"><strong>The booth is open.</strong>Be the first to say hello tonight.</div>';
     if (pendingBcdReplies.size) list.insertAdjacentHTML('beforeend', pendingDots());
@@ -485,10 +489,61 @@
     const modal = document.getElementById('chatImageModal');
     if (!modal) return;
     openChatPicture = { src, caption: String(caption || '').trim() };
-    modal.querySelector('img').src = src;
+    const image = modal.querySelector('img');
+    image.src = src;
+    image.alt = caption ? 'Chat picture: ' + String(caption).slice(0, 160) : 'Chat picture';
     modal.classList.add('open');
+    modal.querySelector('.modalClose')?.focus();
   };
-  window.closeChatImage = () => document.getElementById('chatImageModal')?.classList.remove('open');
+  window.closeChatImage = () => {
+    document.getElementById('chatImageModal')?.classList.remove('open');
+    openChatPicture = { src: '', caption: '' };
+  };
+
+  function chatPictureFile(blob) {
+    const date = new Date().toISOString().slice(0, 10);
+    return new File([blob], `bcdkc-chat-${date}.jpg`, { type: 'image/jpeg' });
+  }
+
+  function openPictureForManualSave() {
+    if (!openChatPicture.src) return;
+    const picture = window.open(openChatPicture.src, '_blank', 'noopener');
+    if (!picture) toast('Open this picture, then press and hold it to save it to Photos');
+  }
+
+  window.saveChatImageToPhotos = async function () {
+    const button = document.querySelector('#chatImageModal .chatImageSave');
+    if (!openChatPicture.src || !button) return;
+    // Do this before any await so browsers that cannot share files can open their
+    // native image-saving surface without losing the user's tap gesture.
+    const shareProbe = new File([], 'bcdkc-chat-picture.jpg', { type: 'image/jpeg' });
+    const canShareImage = !!navigator.share && (!navigator.canShare || navigator.canShare({ files: [shareProbe] }));
+    if (!canShareImage) {
+      openPictureForManualSave();
+      toast('Press and hold the picture, then choose Add to Photos');
+      return;
+    }
+    button.disabled = true;
+    button.setAttribute('aria-busy', 'true');
+    button.textContent = 'Preparing…';
+    try {
+      const blob = await createBrandedChatImage(openChatPicture.src, openChatPicture.caption);
+      const file = chatPictureFile(blob);
+      await navigator.share({ files: [file], title: 'BCDKC chat picture' });
+    } catch (error) {
+      // A dismissed share sheet is not an error worth surfacing. For preparation and
+      // browser failures, offer the original picture as a useful native-save fallback.
+      if (error?.name !== 'AbortError') {
+        console.warn('Chat picture share failed', error);
+        openPictureForManualSave();
+        toast('Open the picture, then press and hold it to save it to Photos');
+      }
+    } finally {
+      button.disabled = false;
+      button.removeAttribute('aria-busy');
+      button.textContent = 'Save to Photos';
+    }
+  };
   window.downloadBrandedChatImage = async function () {
     const button = document.querySelector('#chatImageModal .chatImageDownload');
     if (!openChatPicture.src || !button) return;
@@ -603,17 +658,17 @@
       .chatComposeActions{display:grid;grid-template-rows:minmax(43px,1fr) 43px;gap:7px}.chatSend,.chatPlus{width:64px!important;min-width:0!important;margin:0!important;padding:0 5px!important}.chatSend{height:100%!important;font-size:11px!important}.chatPlus{height:43px!important;font-size:28px!important;line-height:1!important;color:#e4bf69!important}.chatTokenCount{position:absolute!important;right:8px!important;bottom:5px!important;z-index:2!important;display:block!important;border:0!important;background:transparent!important;color:#756f68!important;font:500 10px/1 ui-sans-serif,system-ui!important;pointer-events:none}.chatTokenCount.atMax{color:#e0a13c!important;animation:chatCountGlow .8s ease-in-out infinite alternate}
       @keyframes chatCountGlow{to{color:#f2bd58;text-shadow:0 0 8px rgba(224,161,60,.35)}}
       .chatRetentionNote{margin:7px 2px 0;color:#776e62;font:500 9px/1.35 ui-sans-serif,system-ui;text-align:center}.chatAttachments{display:flex!important;gap:6px;min-height:0;margin:0 0 7px!important;padding:0!important;overflow-x:auto}.chatAttachments[hidden]{display:none!important}.chatDraftThumb{position:relative;flex:0 0 46px;width:46px;height:46px;border:1px solid rgba(201,162,87,.38);border-radius:5px;background:#100b08}.chatDraftThumb img{display:block;width:100%;height:100%;object-fit:cover;border-radius:4px}.chatDraftThumb button{position:absolute;right:-5px;top:-6px;display:grid;place-items:center;width:17px;height:17px;padding:0;border:1px solid #c9a257;border-radius:50%;background:#24120f;color:#f5dfb8;font:700 13px/1 ui-sans-serif;cursor:pointer}
-      .chatMessage.bot{align-self:center!important;max-width:min(88%,680px)!important;border-color:rgba(224,183,82,.7)!important;background:linear-gradient(145deg,#2b2115,#14100b)!important;box-shadow:0 8px 24px rgba(0,0,0,.38),0 0 18px rgba(201,162,87,.08)!important}.chatPending{display:flex!important;align-items:center!important;min-width:48px!important;min-height:30px!important;padding:6px 12px!important;opacity:.86}.chatPendingDots{display:flex;align-items:center;gap:4px;height:14px}.chatPendingDots i{display:block;width:5px;height:5px;border-radius:50%;background:#ead29a;animation:bcdPendingDot 1.1s ease-in-out infinite}.chatPendingDots i:nth-child(2){animation-delay:.16s}.chatPendingDots i:nth-child(3){animation-delay:.32s}@keyframes bcdPendingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
-      .chatMessage{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.chatMessage:has(.chatReactionEdge){margin-bottom:12px}.chatMessageImages{display:grid;grid-template-columns:repeat(2,72px);gap:5px;margin-top:7px}.chatMessageImages:not(.multiple){grid-template-columns:112px}.chatImageThumb{position:relative;display:block;width:72px;height:72px;padding:0;border:1px solid rgba(201,162,87,.32);border-radius:6px;overflow:hidden;background:#0b0806;cursor:pointer}.chatMessageImages:not(.multiple) .chatImageThumb{width:112px;height:96px}.chatImageThumb img{display:block;width:100%;height:100%;object-fit:cover;transition:filter .18s,transform .18s}.chatImageThumb.shielded img{filter:blur(14px) brightness(.38);transform:scale(1.16)}.chatImageThumb.image-pending{cursor:wait}.chatImageSafety{position:absolute;inset:0;z-index:2;display:grid;place-items:center;padding:8px;background:rgba(9,6,4,.3);color:#ead7b3;text-align:center;font:700 9px/1.25 ui-sans-serif,system-ui;text-shadow:0 1px 4px #000}.chatReactionEdge{position:absolute;right:8px;bottom:-13px;display:flex;gap:3px;z-index:2}.chatMessage.other .chatReactionEdge{right:auto;left:8px}.chatReactionCount{display:flex;align-items:center;gap:2px;height:24px;padding:2px 6px;border:1px solid rgba(201,162,87,.38);border-radius:999px;background:#160f0b;color:#ead7b3;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.45)}.chatReactionCount small{font-size:9px;color:#a9997d}
+      .chatMessage.bot{align-self:center!important;max-width:min(88%,680px)!important;border-color:rgba(224,183,82,.7)!important;background:linear-gradient(145deg,#2b2115,#14100b)!important;box-shadow:0 8px 24px rgba(0,0,0,.38),0 0 18px rgba(201,162,87,.08)!important}.chatMessageIdentity{display:inline-flex;align-items:center;gap:6px}.chatHostBadge{display:inline-flex;align-items:center;padding:2px 6px;border:1px solid rgba(235,195,99,.72);border-radius:999px;background:rgba(201,162,87,.16);color:#f6d887;font:700 8px/1 ui-sans-serif,system-ui;text-transform:uppercase;letter-spacing:.08em}.chatPending{display:flex!important;align-items:center!important;min-width:48px!important;min-height:30px!important;padding:6px 12px!important;opacity:.86}.chatPendingDots{display:flex;align-items:center;gap:4px;height:14px}.chatPendingDots i{display:block;width:5px;height:5px;border-radius:50%;background:#ead29a;animation:bcdPendingDot 1.1s ease-in-out infinite}.chatPendingDots i:nth-child(2){animation-delay:.16s}.chatPendingDots i:nth-child(3){animation-delay:.32s}@keyframes bcdPendingDot{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+      .chatMessage{position:relative;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}.chatMessage:has(.chatReactionEdge){margin-bottom:12px}.chatMessageImages{display:grid;grid-template-columns:repeat(2,72px);gap:5px;margin-top:7px}.chatMessageImages:not(.multiple){grid-template-columns:112px}.chatImageThumb{position:relative;display:block;width:72px;height:72px;padding:0;border:1px solid rgba(201,162,87,.32);border-radius:6px;overflow:hidden;background:#0b0806;cursor:pointer}.chatMessageImages:not(.multiple) .chatImageThumb{width:112px;height:96px}.chatImageThumb img{display:block;width:100%;height:100%;object-fit:cover;transition:filter .18s,transform .18s}.chatImageThumb.shielded img{filter:grayscale(1) blur(13px) brightness(.48);transform:scale(1.16)}.chatImageSafety{position:absolute;inset:0;z-index:2;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:8px;background:rgba(68,68,68,.86);color:#fff;text-align:center;font:700 10px/1.2 ui-sans-serif,system-ui;text-shadow:0 1px 3px #000}.chatImageSafety svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7}.chatImageSafety small{font:600 9px/1.2 ui-sans-serif,system-ui;color:#e8e8e8}.chatReactionEdge{position:absolute;right:8px;bottom:-13px;display:flex;gap:3px;z-index:2}.chatMessage.other .chatReactionEdge{right:auto;left:8px}.chatReactionCount{display:flex;align-items:center;gap:2px;height:24px;padding:2px 6px;border:1px solid rgba(201,162,87,.38);border-radius:999px;background:#160f0b;color:#ead7b3;font-size:13px;box-shadow:0 3px 8px rgba(0,0,0,.45)}.chatReactionCount small{font-size:9px;color:#a9997d}
       .chatActions{position:fixed!important;z-index:1100!important;-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}.chatActions.ownActions,.chatActions.moderatorActions{display:grid!important;min-width:220px!important;padding:5px!important;border:1px solid rgba(201,162,87,.72)!important;border-radius:6px!important;background:linear-gradient(145deg,#2b1a11,#100b08)!important;box-shadow:0 16px 42px rgba(0,0,0,.68)!important}.chatActions.ownActions button,.chatActions.moderatorActions>.chatDeleteAction{padding:11px 12px!important;border:0!important;background:transparent!important;color:#efdbaf!important;text-align:left!important;font:600 12px ui-sans-serif,system-ui!important}.chatActions.ownActions button:hover,.chatActions.moderatorActions>.chatDeleteAction:hover{background:rgba(201,162,87,.14)!important}.chatActions.ownActions .chatDeleteAction,.chatActions.moderatorActions>.chatDeleteAction{color:#efaaa2!important}.chatActions.reactionActions,.moderatorReactionRow{display:flex!important;gap:2px!important;padding:6px!important}.chatActions.reactionActions{border:1px solid rgba(201,162,87,.65)!important;border-radius:999px!important;background:#17100c!important;box-shadow:0 14px 36px rgba(0,0,0,.66)!important}.moderatorReactionRow{border-bottom:1px solid rgba(201,162,87,.25)!important}.chatActions.reactionActions button,.moderatorReactionRow button{display:grid;place-items:center;width:38px;height:38px;padding:0;border:0;border-radius:50%;background:transparent;font-size:22px;cursor:pointer;transition:transform .12s,background .12s}.chatActions.reactionActions button:hover,.chatActions.reactionActions button:focus,.moderatorReactionRow button:hover,.moderatorReactionRow button:focus{transform:scale(1.16);background:rgba(201,162,87,.14);outline:0}
-      .chatEditing{width:min(78%,620px);box-sizing:border-box}.chatEditing textarea{min-height:78px!important;max-height:180px!important;resize:vertical!important}.chatImageModal .modal{display:flex;flex-direction:column;align-items:center;width:min(92vw,760px);max-width:760px}.chatImageStage{position:relative;max-width:100%;padding:7px;background:linear-gradient(145deg,#2d1d12,#080604);border:1px solid rgba(224,183,82,.75);box-shadow:0 0 0 1px rgba(255,226,154,.16) inset,0 18px 42px rgba(0,0,0,.52)}.chatImageStage:before,.chatImageStage:after{content:'';position:absolute;width:24px;height:24px;pointer-events:none}.chatImageStage:before{left:3px;top:3px;border-left:1px solid rgba(255,226,154,.78);border-top:1px solid rgba(255,226,154,.78)}.chatImageStage:after{right:3px;bottom:3px;border-right:1px solid rgba(255,226,154,.78);border-bottom:1px solid rgba(255,226,154,.78)}.chatImageModal img{display:block;max-width:100%;max-height:72vh;object-fit:contain;border:1px solid rgba(201,162,87,.4);background:#080604}.chatImageDownload{display:grid!important;place-items:center;width:42px!important;height:42px!important;margin-top:12px!important;padding:0!important}.chatImageDownload:disabled{cursor:wait!important;opacity:.65}.chatImageDownload svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}
-      @media(max-width:620px){[data-view="chat"]:not([hidden]){height:calc(100dvh - var(--chat-topbar-height,128px) - 18px);min-height:0}[data-view="chat"]>.viewHero{padding:12px 14px!important}.chatComposeGrid{grid-template-columns:minmax(0,1fr) 56px}.chatTextWrap #chatInput{min-height:74px!important}.chatSend,.chatPlus{width:56px!important}.chatMessageImages{grid-template-columns:repeat(2,64px)}.chatImageThumb{width:64px;height:64px}.chatMessageImages:not(.multiple){grid-template-columns:96px}.chatMessageImages:not(.multiple) .chatImageThumb{width:96px;height:84px}.chatActions.reactionActions button{width:34px;height:34px;font-size:20px}}
+      .chatEditing{width:min(78%,620px);box-sizing:border-box}.chatEditing textarea{min-height:78px!important;max-height:180px!important;resize:vertical!important}.chatImageModal .modal{display:flex;flex-direction:column;align-items:center;width:min(92vw,760px);max-width:760px}.chatImageStage{position:relative;max-width:100%;padding:7px;background:linear-gradient(145deg,#2d1d12,#080604);border:1px solid rgba(224,183,82,.75);box-shadow:0 0 0 1px rgba(255,226,154,.16) inset,0 18px 42px rgba(0,0,0,.52)}.chatImageStage:before,.chatImageStage:after{content:'';position:absolute;width:24px;height:24px;pointer-events:none}.chatImageStage:before{left:3px;top:3px;border-left:1px solid rgba(255,226,154,.78);border-top:1px solid rgba(255,226,154,.78)}.chatImageStage:after{right:3px;bottom:3px;border-right:1px solid rgba(255,226,154,.78);border-bottom:1px solid rgba(255,226,154,.78)}.chatImageModal img{display:block;max-width:100%;max-height:66vh;object-fit:contain;border:1px solid rgba(201,162,87,.4);background:#080604}.chatImageActions{display:flex;flex-wrap:wrap;justify-content:center;gap:7px;width:100%;margin-top:12px}.chatImageSave,.chatImageOpen,.chatImageDownload{min-height:42px!important;margin:0!important}.chatImageSave{flex:1 1 150px}.chatImageOpen,.chatImageDownload{flex:0 0 auto}.chatImageDownload{display:grid!important;place-items:center;width:42px!important;padding:0!important}.chatImageSave:disabled,.chatImageDownload:disabled{cursor:wait!important;opacity:.65}.chatImageDownload svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8}.chatImageHint{width:100%;margin:8px 0 0;color:#ac9c80;text-align:center;font:500 10px/1.35 ui-sans-serif,system-ui}
+      @media(max-width:620px){[data-view="chat"]:not([hidden]){height:calc(100dvh - var(--chat-topbar-height,128px) - 18px);min-height:0}[data-view="chat"]>.viewHero{padding:12px 14px!important}.chatComposeGrid{grid-template-columns:minmax(0,1fr) 56px}.chatTextWrap #chatInput{min-height:74px!important}.chatSend,.chatPlus{width:56px!important}.chatMessageImages{grid-template-columns:repeat(2,64px)}.chatImageThumb{width:64px;height:64px}.chatMessageImages:not(.multiple){grid-template-columns:96px}.chatMessageImages:not(.multiple) .chatImageThumb{width:96px;height:84px}.chatActions.reactionActions button{width:34px;height:34px;font-size:20px}.chatImageModal .modal{width:min(94vw,760px);padding:18px 12px!important}.chatImageModal img{max-height:58dvh}.chatImageActions{display:grid;grid-template-columns:1fr 42px}.chatImageSave{grid-column:1/-1;width:100%}.chatImageOpen{min-width:0}.chatImageHint{font-size:9px}}
     </style>`);
     document.getElementById('houseGuideCall')?.remove();
     document.getElementById('chatActions')?.remove();
     document.getElementById('chatContext')?.remove();
     if (!document.getElementById('chatImageInput')) document.body.insertAdjacentHTML('beforeend', '<input id="chatImageInput" type="file" accept="image/*" multiple hidden>');
-    if (!document.getElementById('chatImageModal')) document.body.insertAdjacentHTML('beforeend', '<div id="chatImageModal" class="modalWrap chatImageModal" onclick="if(event.target===this)closeChatImage()"><div class="modal"><button class="modalClose" aria-label="Close picture" onclick="closeChatImage()">×</button><img alt="Chat picture"><a class="btn gold chatImageDownload" download="karaoke-chat-picture.jpg" aria-label="Download picture"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg></a></div></div>');
+    if (!document.getElementById('chatImageModal')) document.body.insertAdjacentHTML('beforeend', '<div id="chatImageModal" class="modalWrap chatImageModal" role="dialog" aria-modal="true" aria-label="Chat picture viewer" onclick="if(event.target===this)closeChatImage()"><div class="modal"><button class="modalClose" aria-label="Close picture" onclick="closeChatImage()">×</button><div class="chatImageStage"><img alt="Chat picture"></div><div class="chatImageActions"><button type="button" class="btn gold chatImageSave" onclick="saveChatImageToPhotos()">Save to Photos</button><button type="button" class="btn ghost small chatImageOpen" onclick="openChatImageInNewTab()">Open image</button><a class="btn ghost chatImageDownload" download="karaoke-chat-picture.jpg" aria-label="Download picture"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m-5-5 5 5 5-5M5 20h14"/></svg></a></div><p class="chatImageHint">Save to Photos opens your device share sheet.</p></div></div>');
     const chatImageModal = document.getElementById('chatImageModal');
     const modalImage = chatImageModal?.querySelector('img');
     if (modalImage && !modalImage.parentElement.classList.contains('chatImageStage')) {
@@ -633,6 +688,10 @@
       downloadButton.addEventListener('click', window.downloadBrandedChatImage);
       oldDownload.replaceWith(downloadButton);
     }
+    window.openChatImageInNewTab = openPictureForManualSave;
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && chatImageModal?.classList.contains('open')) closeChatImage();
+    });
     const fileInput = document.getElementById('chatImageInput');
     fileInput.onchange = async event => {
       const files = Array.from(event.target.files || []).slice(0, 4 - draftImages.length);
@@ -656,11 +715,7 @@
     const message = chatMessages.find(item => item.id === article?.dataset.chatId);
     const imageIndex = Number(thumb.dataset.imageIndex);
     const state = thumb.dataset.imageState || 'pending';
-    if (state === 'pending') {
-      toast('This picture is still being checked');
-      return;
-    }
-    if ((state === 'sensitive' || state === 'unknown') && !thumb.classList.contains('revealed')) {
+    if (state === 'sensitive' && !thumb.classList.contains('revealed')) {
       revealedChatImages.add(`${message?.id}:${imageIndex}`);
       renderChat();
       return;

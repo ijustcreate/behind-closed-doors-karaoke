@@ -108,12 +108,14 @@ Deno.serve(async (req) => {
         expires_at: expiresAt.toISOString(),
       }, { onConflict: "message_id,image_index" });
       if (analysisError) throw analysisError;
-      const states = Array.from({ length: images.length }, (_, index) => {
-        const previous = Array.isArray(row.image_states) ? row.image_states[index] : null;
-        return ["safe", "sensitive", "unknown"].includes(previous) ? previous : "pending";
+      // The worker can finish separate images of a message at nearly the same
+      // time.  Let a row-locking RPC merge one index so one result cannot erase
+      // another result that was written between this read and update.
+      const { error: stateError } = await admin.rpc("set_karaoke_chat_image_state", {
+        p_message_id: id,
+        p_image_index: imageIndex,
+        p_state: status,
       });
-      states[imageIndex] = status;
-      const { error: stateError } = await admin.from("karaoke_chat_messages").update({ image_states: states }).eq("id", id);
       if (stateError) throw stateError;
       return json({ messageId: id, imageIndex, safetyStatus: status });
     }

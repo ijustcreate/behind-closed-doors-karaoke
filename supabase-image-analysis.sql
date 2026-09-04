@@ -71,3 +71,54 @@ create policy "service role manages worker secrets"
   to service_role
   using (true)
   with check (true);
+
+-- Merge one analysis result under a row lock.  This avoids a lost update when
+-- a multi-image post completes its background checks in close succession.
+create or replace function public.set_karaoke_chat_image_state(
+  p_message_id text,
+  p_image_index smallint,
+  p_state text
+)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_images jsonb;
+  v_states jsonb;
+  v_next jsonb;
+begin
+  if p_state not in ('safe', 'sensitive', 'unknown') then
+    raise exception 'Invalid image state';
+  end if;
+
+  select image_urls, image_states
+    into v_images, v_states
+    from public.karaoke_chat_messages
+    where id = p_message_id
+    for update;
+  if not found then
+    raise exception 'Message not found';
+  end if;
+  if p_image_index < 0 or p_image_index >= jsonb_array_length(v_images) then
+    raise exception 'Image not found';
+  end if;
+
+  select jsonb_agg(
+    case when position - 1 = p_image_index then to_jsonb(p_state)
+         when v_states -> (position - 1) in ('"safe"'::jsonb, '"sensitive"'::jsonb, '"unknown"'::jsonb)
+           then v_states -> (position - 1)
+         else '"pending"'::jsonb
+    end
+    order by position
+  ) into v_next
+  from generate_series(1, jsonb_array_length(v_images)) as position;
+
+  update public.karaoke_chat_messages set image_states = v_next where id = p_message_id;
+  return v_next;
+end;
+$$;
+
+revoke all on function public.set_karaoke_chat_image_state(text, smallint, text) from public, anon, authenticated;
+grant execute on function public.set_karaoke_chat_image_state(text, smallint, text) to service_role;

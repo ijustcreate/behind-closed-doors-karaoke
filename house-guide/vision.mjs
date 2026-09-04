@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { recordActivity, recordInteraction } from './activity.mjs';
 
 const EXPLICIT_THRESHOLDS = new Map([
   ['FEMALE_BREAST_EXPOSED', 0.38],
@@ -20,6 +21,23 @@ export function moderationVerdict(detections) {
     score: strongest.score,
     labels: relevant.filter(item => item.score >= 0.18).map(item => `${item.label}:${item.score.toFixed(3)}`),
   };
+}
+
+// The detector covers exposed-body classes.  The local vision model supplies the
+// complementary, narrowly scoped check for graphic violence/gore.  Keep this
+// separate from a general "mature" label: only these two confirmed categories
+// should cause the public client to cover an image.
+export function combineSafetyVerdicts(detectorVerdict, visionSafety) {
+  const base = detectorVerdict || { status: 'unknown', score: 0, labels: [] };
+  if (visionSafety?.explicitSexual || visionSafety?.graphicViolence) {
+    const labels = Array.from(new Set([
+      ...(Array.isArray(base.labels) ? base.labels : []),
+      ...(visionSafety.explicitSexual ? ['VISION_EXPLICIT_SEXUAL'] : []),
+      ...(visionSafety.graphicViolence ? ['VISION_GRAPHIC_VIOLENCE_OR_GORE'] : []),
+    ]));
+    return { status: 'sensitive', score: Math.max(Number(base.score) || 0, 1), labels };
+  }
+  return base;
 }
 
 export async function imageBytes(source) {
@@ -52,6 +70,8 @@ export function runNudeDetector({ pythonPath, scriptPath, bytes }) {
 }
 
 export async function describeImage({ ollamaUrl, model, bytes, keepAlive = '0' }) {
+  const started = Date.now();
+  try {
   const response = await fetch(`${ollamaUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -72,7 +92,47 @@ export async function describeImage({ ollamaUrl, model, bytes, keepAlive = '0' }
   const result = JSON.parse(body);
   const caption = String(result?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/\s+/g, ' ').trim();
   if (!caption) throw new Error('Vision model returned an empty description');
-  return caption.slice(0, 1200);
+    recordActivity({ type: 'ollama_image_description', model, outcome: 'success', latencyMs: Date.now() - started });
+    return caption.slice(0, 1200);
+  } catch (error) {
+    recordActivity({ type: 'ollama_image_description', model, outcome: 'error', latencyMs: Date.now() - started, error: error.message });
+    throw error;
+  }
+}
+
+export async function classifyImageSafety({ ollamaUrl, model, bytes, keepAlive = '0' }) {
+  const started = Date.now();
+  try {
+  const response = await fetch(`${ollamaUrl}/api/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model,
+      stream: false,
+      keep_alive: keepAlive,
+      messages: [{
+        role: 'user',
+        content: 'Inspect this image only for (1) explicit sexual content or exposed genitals/breasts/anus, and (2) graphic violence or gore such as visible severe wounds, dismemberment, or large amounts of blood. Do not flag ordinary swimwear, non-graphic injury, weapons without visible harm, or non-graphic violence. Return only JSON with exactly two boolean fields: {"explicitSexual":false,"graphicViolence":false}.',
+        images: [bytes.toString('base64')],
+      }],
+      options: { temperature: 0, top_p: 0.2, num_predict: 80 },
+    }),
+  });
+  const body = await response.text();
+  if (!response.ok) throw new Error(`Vision safety check failed: ${response.status} ${body.slice(0, 300)}`);
+  const content = String(JSON.parse(body)?.message?.content || '').replace(/<think>[\s\S]*?<\/think>/gi, '');
+  const match = content.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Vision safety check returned invalid JSON');
+  const result = JSON.parse(match[0]);
+  if (typeof result.explicitSexual !== 'boolean' || typeof result.graphicViolence !== 'boolean') {
+    throw new Error('Vision safety check returned an invalid result');
+  }
+    recordActivity({ type: 'ollama_image_safety', model, outcome: 'success', latencyMs: Date.now() - started });
+    return result;
+  } catch (error) {
+    recordActivity({ type: 'ollama_image_safety', model, outcome: 'error', latencyMs: Date.now() - started, error: error.message });
+    throw error;
+  }
 }
 
 export async function workerApi({ supabaseUrl, supabaseKey, workerSecret, body }) {
@@ -102,15 +162,17 @@ export async function analyzePendingImages({ room, settings, log }) {
       try {
         const bytes = await imageBytes(images[imageIndex]);
         let caption = 'A chat image was shared, but its contents could not be described reliably.';
-        try {
-          caption = await describeImage({
-            ollamaUrl: settings.ollamaUrl,
-            model: settings.visionModel,
-            bytes,
-            keepAlive: settings.visionKeepAlive,
-          });
-        } catch (error) {
-          log('Private image description failed:', error.message);
+        if (settings.runtimeConfig?.vision?.enableDescription !== false) {
+          try {
+            caption = await describeImage({
+              ollamaUrl: settings.ollamaUrl,
+              model: settings.visionModel,
+              bytes,
+              keepAlive: settings.visionKeepAlive,
+            });
+          } catch (error) {
+            log('Private image description failed:', error.message);
+          }
         }
         let moderation = { status: 'unknown', score: 0, labels: [] };
         try {
@@ -118,6 +180,21 @@ export async function analyzePendingImages({ room, settings, log }) {
           moderation = moderationVerdict(detections);
         } catch (error) {
           log('Sensitive-image check failed:', error.message);
+        }
+        if (settings.runtimeConfig?.vision?.enableSafetyCheck !== false) {
+          try {
+            const visionSafety = await classifyImageSafety({
+              ollamaUrl: settings.ollamaUrl,
+              model: settings.visionModel,
+              bytes,
+              keepAlive: settings.visionKeepAlive,
+            });
+            moderation = combineSafetyVerdicts(moderation, visionSafety);
+          } catch (error) {
+            // A failed/slow local check remains "unknown" server-side, while the
+            // client deliberately keeps the image visible instead of dead-ending it.
+            log('Graphic-safety check failed:', error.message);
+          }
         }
         await workerApi({
           supabaseUrl: settings.supabaseUrl,
@@ -137,8 +214,16 @@ export async function analyzePendingImages({ room, settings, log }) {
         states[imageIndex] = moderation.status;
         row.image_states = states;
         analyzed += 1;
+        recordInteraction({
+          type: 'image_analysis',
+          outcome: 'success',
+          model: settings.visionModel,
+          input: { messageId: row.id, singer: row.singer_name, imageUrl: images[imageIndex] },
+          output: { privateCaption: caption, safetyStatus: moderation.status, detectedLabels: moderation.labels },
+        });
         log('Analyzed chat image', `${row.id}:${imageIndex} status=${moderation.status}`);
       } catch (error) {
+        recordInteraction({ type: 'image_analysis', outcome: 'error', model: settings.visionModel, input: { messageId: row.id, singer: row.singer_name, imageUrl: images[imageIndex] }, error: error.message });
         log('Image analysis failed:', `${row.id}:${imageIndex} ${error.message}`);
       }
     }

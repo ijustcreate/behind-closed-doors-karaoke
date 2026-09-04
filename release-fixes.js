@@ -81,11 +81,24 @@
     profile.querySelectorAll('.profileActions button[onclick*="openSettings"]').forEach(button => button.remove());
     const hero = profile.querySelector('.viewHero');
     if (!hero) return;
-    const existing = hero.querySelector('#profileAdminSettingsButton');
-    if (user.isAdmin && !existing) {
-      hero.insertAdjacentHTML('beforeend', '<button id="profileAdminSettingsButton" class="btn small" type="button" onclick="openSettings()">Admin settings</button>');
+    let button = hero.querySelector('#profileAdminSettingsButton');
+    if (user.isAdmin && !button) {
+      hero.insertAdjacentHTML('beforeend', '<button id="profileAdminSettingsButton" class="btn small" type="button">Admin settings</button>');
+      button = hero.querySelector('#profileAdminSettingsButton');
     } else if (!user.isAdmin) {
-      existing?.remove();
+      button?.remove();
+      return;
+    }
+
+    // Bind the account launcher directly instead of relying on an inline
+    // handler inside the mobile profile layout. This keeps its tap target
+    // working when the profile is re-rendered by the account polish layers.
+    if (button) {
+      button.onclick = event => {
+        event.preventDefault();
+        event.stopPropagation();
+        window.openSettings();
+      };
     }
   }
 
@@ -387,7 +400,7 @@
       .tab .badgeCount[hidden]{display:none!important}
       .tab.hasNotification .badgeCount{position:absolute!important;right:-3px!important;top:2px!important;min-width:16px!important;height:16px!important;padding:0 4px!important;margin:0!important;border:1px solid #d3a851!important;box-shadow:0 0 0 2px #17100c!important;font-size:9px!important;line-height:16px!important}
       #profileView .viewHero{position:relative!important;padding-right:132px!important}
-      #profileAdminSettingsButton{position:absolute!important;right:12px!important;top:12px!important;margin:0!important}
+      #profileAdminSettingsButton{position:absolute!important;z-index:3!important;right:12px!important;top:12px!important;margin:0!important;min-height:36px!important;pointer-events:auto!important;touch-action:manipulation!important}
       .chatbotSetting{margin-top:12px!important}
       @media(max-width:620px){
         .tab.hasNotification .badgeCount{right:-1px!important;top:0!important}

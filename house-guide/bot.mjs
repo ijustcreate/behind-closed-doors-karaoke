@@ -4,6 +4,8 @@ import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { buildPrompt, chatbotSetting, cleanModelReply, deterministicReplyId, hasPrivateImageEvidence, loadEnv, needsRoomImageEvidence, relevantFacts, shouldReplyToMessage, songSearch } from './lib.mjs';
 import { analyzePendingImages, attachPrivateImageContext } from './vision.mjs';
+import { recordActivity, recordInteraction } from './activity.mjs';
+import { loadRuntimeConfig } from './runtime-config.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 loadEnv(path.join(HERE, '.env'));
@@ -33,7 +35,13 @@ const apiHeaders = {
   'Content-Type': 'application/json',
 };
 const songs = JSON.parse(fs.readFileSync(path.join(HERE, '..', 'songs.json'), 'utf8'));
-const knowledge = Object.fromEntries(fs.readdirSync(path.join(HERE, 'knowledge')).filter(file => file.endsWith('.json')).map(file => [file, JSON.parse(fs.readFileSync(path.join(HERE, 'knowledge', file), 'utf8'))]));
+function loadKnowledge() {
+  return Object.fromEntries(fs.readdirSync(path.join(HERE, 'knowledge')).filter(file => file.endsWith('.json')).map(file => [file, JSON.parse(fs.readFileSync(path.join(HERE, 'knowledge', file), 'utf8'))]));
+}
+let knowledge = loadKnowledge();
+let knowledgeCheckedAt = 0;
+let runtimeConfig = loadRuntimeConfig(HERE);
+let runtimeConfigCheckedAt = 0;
 const handled = new Set();
 let busy = false;
 let chatbotEnabled = true;
@@ -51,8 +59,8 @@ async function request(url, options = {}) {
   return body ? JSON.parse(body) : null;
 }
 
-async function fetchRoom() {
-  const since = new Date(Date.now() - settings.contextMinutes * 60_000).toISOString();
+async function fetchRoom(contextMinutes = settings.contextMinutes) {
+  const since = new Date(Date.now() - contextMinutes * 60_000).toISOString();
   const query = new URLSearchParams({
     created_at: `gte.${since}`,
     select: 'id,profile_id,singer_name,message,image_urls,image_states,night_key,created_at',
@@ -78,22 +86,52 @@ async function refreshChatbotSetting(force = false) {
   return chatbotEnabled;
 }
 
+function refreshKnowledge() {
+  if (Date.now() - knowledgeCheckedAt < 10_000) return;
+  try {
+    knowledge = loadKnowledge();
+    knowledgeCheckedAt = Date.now();
+  } catch (error) {
+    log('Knowledge refresh failed:', error.message);
+  }
+}
+
+function refreshRuntimeConfig() {
+  if (Date.now() - runtimeConfigCheckedAt < 10_000) return;
+  runtimeConfig = loadRuntimeConfig(HERE);
+  runtimeConfigCheckedAt = Date.now();
+}
+
 async function ollamaHealth() {
   return request(`${settings.ollamaUrl}/api/tags`);
 }
 
 async function answer(source, roomMessages) {
   const query = String(source.message || '');
+  const facts = relevantFacts(knowledge, query);
+  const songMatches = songSearch(songs, query);
+  const trace = {
+    trigger: 'Explicit BCD summon matched',
+    roomMessagesUsed: roomMessages.length,
+    roomImagesWithPrivateContext: roomMessages.filter(row => Array.isArray(row.private_image_captions) && row.private_image_captions.some(Boolean)).length,
+    factsUsed: facts,
+    songMatches: songMatches.map(song => ({ title: song.title, artist: song.artist, code: song.code })),
+    modelCalls: [],
+  };
   if (needsRoomImageEvidence(query) && !hasPrivateImageEvidence(roomMessages)) {
-    return `I can't currently see that room image. Please repost it and tag @BCD again, and I'll take a look.`;
+    trace.route = 'Safety response: image question had no private image context';
+    return { content: `I can't currently see that room image. Please repost it and tag @BCD again, and I'll take a look.`, trace };
   }
   const prompt = buildPrompt({
     source,
     roomMessages,
-    facts: relevantFacts(knowledge, query),
-    songs: songSearch(songs, query),
+    facts,
+    songs: songMatches,
   });
-  const generate = (extraInstruction = '', numPredict = 320) => request(`${settings.ollamaUrl}/api/chat`, {
+  const generate = async (extraInstruction = '', numPredict = 320) => {
+    const started = Date.now();
+    try {
+      const result = await request(`${settings.ollamaUrl}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -107,7 +145,16 @@ async function answer(source, roomMessages) {
       ],
       options: { temperature: 0.25, top_p: 0.8, num_ctx: 8192, num_predict: numPredict, repeat_penalty: 1.08 },
     }),
-  });
+      });
+      trace.modelCalls.push({ purpose: extraInstruction ? 'compact rewrite' : 'guest reply', model: result?.model || settings.model, latencyMs: Date.now() - started, outcome: 'success' });
+      recordActivity({ type: 'ollama_text', model: result?.model || settings.model, outcome: 'success', latencyMs: Date.now() - started });
+      return result;
+    } catch (error) {
+      trace.modelCalls.push({ purpose: extraInstruction ? 'compact rewrite' : 'guest reply', model: settings.model, latencyMs: Date.now() - started, outcome: 'error', error: error.message });
+      recordActivity({ type: 'ollama_text', model: settings.model, outcome: 'error', latencyMs: Date.now() - started, error: error.message });
+      throw error;
+    }
+  };
   let result = await generate();
   if (result?.done_reason === 'length') {
     const draft = cleanModelReply(result?.message?.content);
@@ -118,14 +165,15 @@ async function answer(source, roomMessages) {
   const finalContent = rawContent.includes('</think>') ? rawContent.split('</think>').pop() : rawContent;
   const content = cleanModelReply(finalContent, { limited: result?.done_reason === 'length' });
   if (!content) throw new Error('The local model returned an empty answer');
-  return content;
+  trace.route = result?.done_reason === 'length' ? 'Model reply was compacted after reaching its reply limit' : 'Local model reply';
+  return { content, trace };
 }
 
 async function postReply(source, message) {
   const row = {
     id: deterministicReplyId(source.id),
     profile_id: 'bcd-house-guide',
-    singer_name: 'BCD Host',
+    singer_name: 'Alfie',
     message,
     image_urls: [],
     night_key: source.night_key,
@@ -147,31 +195,47 @@ async function cycle() {
   if (busy) return;
   busy = true;
   try {
+    refreshKnowledge();
+    refreshRuntimeConfig();
     const enabled = await refreshChatbotSetting();
-    let room = await fetchRoom();
+    let room = await fetchRoom(runtimeConfig.bot.contextMinutes);
     if (settings.workerSecret) {
-      await analyzePendingImages({ room, settings, log });
+      await analyzePendingImages({ room, settings: { ...settings, runtimeConfig }, log });
       room = await attachPrivateImageContext({ room, settings });
     }
     if (!enabled) return;
     const existingIds = new Set(room.map(row => row.id));
-    const candidates = room.filter(shouldReplyToMessage);
+    const candidates = room.filter(row => shouldReplyToMessage(row, runtimeConfig.bot));
     for (const source of candidates) {
       if (chatbotChangedAt && Date.parse(source.created_at) < chatbotChangedAt) continue;
       const replyId = deterministicReplyId(source.id);
       if (handled.has(source.id) || existingIds.has(replyId)) continue;
       handled.add(source.id);
       log('Summoned by', `${source.singer_name}: ${String(source.message).slice(0, 120)}`);
+      const replyStarted = Date.now();
       try {
-        const message = await answer(source, room);
+        const result = await answer(source, room);
+        const message = result.content;
         if (!(await refreshChatbotSetting(true))) {
           log('Reply discarded because the chatbot was turned off');
           continue;
         }
         await postReply(source, message);
+        recordActivity({ type: 'bot_reply', model: settings.model, outcome: 'success', latencyMs: Date.now() - replyStarted });
+        recordInteraction({
+          type: 'chat_reply',
+          outcome: 'success',
+          model: settings.model,
+          latencyMs: Date.now() - replyStarted,
+          input: { singer: source.singer_name, message: source.message, imageUrls: source.image_urls || [] },
+          output: message,
+          trace: result.trace,
+        });
         log('Replied', message);
       } catch (error) {
         handled.delete(source.id);
+        recordActivity({ type: 'bot_reply', model: settings.model, outcome: 'error', latencyMs: Date.now() - replyStarted, error: error.message });
+        recordInteraction({ type: 'chat_reply', outcome: 'error', model: settings.model, latencyMs: Date.now() - replyStarted, input: { singer: source.singer_name, message: source.message, imageUrls: source.image_urls || [] }, error: error.message });
         log('Reply failed:', error.message);
       }
     }
@@ -192,6 +256,7 @@ async function main() {
     return;
   }
   log('Starting BCD House Guide', `model=${settings.model} vision=${settings.visionModel} context=${settings.contextMinutes}m poll=${settings.pollMs}ms settings=${settings.settingsPollMs}ms${settings.workerSecret ? '' : ' VISION-NOT-CONFIGURED'}${settings.dryRun ? ' DRY-RUN' : ''}`);
+  recordActivity({ type: 'bot_lifecycle', model: settings.model, outcome: 'started', note: 'Bot started and is polling for tagged messages.' });
   await cycle();
   if (process.argv.includes('--once')) return;
   setInterval(cycle, Math.max(2000, settings.pollMs));

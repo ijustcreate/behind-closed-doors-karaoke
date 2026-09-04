@@ -330,3 +330,81 @@ if (!document.getElementById('personal-library-sync-script')) {
 
   document.addEventListener('keydown', event => { if (event.key === 'Escape') closeGuidance(); });
 })();
+
+/* Keep the Songbook filters together while they cross the mobile app header. */
+(function () {
+  function dispatchControlEvent(control, type) {
+    control.dispatchEvent(new Event(type, { bubbles: true }));
+  }
+
+  function makeClearButton(label, action) {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'songbookControlClear';
+    button.setAttribute('aria-label', label);
+    button.title = label;
+    button.textContent = '×';
+    button.addEventListener('click', action);
+    return button;
+  }
+
+  function wrapControl(control, className, clearButton) {
+    if (!control || control.parentElement?.classList.contains(className)) return;
+    const wrap = document.createElement('div');
+    wrap.className = className;
+    control.before(wrap);
+    wrap.append(control, clearButton);
+  }
+
+  function setupSongbookControls() {
+    const toolbar = document.querySelector('[data-view="songbook"] .toolbar');
+    const search = document.getElementById('search');
+    const genre = document.getElementById('genreFilter');
+    if (!toolbar || !search || !genre) return;
+
+    const clearSearch = makeClearButton('Clear song search', () => {
+      if (!search.value) return;
+      search.value = '';
+      dispatchControlEvent(search, 'input');
+      search.focus();
+    });
+    const clearGenre = makeClearButton('Reset genre filter to All genres', () => {
+      if (genre.value === 'all') return;
+      genre.value = 'all';
+      dispatchControlEvent(genre, 'change');
+      genre.focus();
+    });
+
+    wrapControl(search, 'songbookSearchWrap', clearSearch);
+    wrapControl(genre, 'songbookGenreWrap', clearGenre);
+
+    const syncClearButtons = () => {
+      clearSearch.hidden = !search.value;
+      clearGenre.hidden = genre.value === 'all';
+    };
+    search.addEventListener('input', syncClearButtons);
+    genre.addEventListener('change', syncClearButtons);
+    syncClearButtons();
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    document.head.insertAdjacentHTML('beforeend', `<style>
+      .songbookSearchWrap,.songbookGenreWrap{position:relative;min-width:0}
+      .songbookSearchWrap .control,.songbookGenreWrap .control{width:100%;box-sizing:border-box;padding-right:39px}
+      .songbookControlClear{position:absolute;right:7px;top:50%;z-index:1;width:26px;height:26px;padding:0;transform:translateY(-50%);border:0;border-radius:50%;background:transparent;color:#d8bd7d;font:400 24px/22px Arial,sans-serif;cursor:pointer}
+      .songbookControlClear:hover,.songbookControlClear:focus{background:rgba(201,162,87,.17);color:#f4d895;outline:0}
+      .songbookControlClear[hidden]{display:none}
+      .toolbar .songbookSearchWrap{grid-column:1}
+      .toolbar .songbookGenreWrap{grid-column:3}
+      @media(max-width:900px){.toolbar .songbookSearchWrap{grid-column:1/-1}.toolbar .songbookGenreWrap{grid-column:auto}}
+      @media(max-width:620px){
+        [data-view="songbook"] .toolbar{top:88px!important;isolation:isolate}
+        .toolbar .songbookSearchWrap{grid-column:1/-1}
+        .toolbar .songbookGenreWrap{grid-column:auto}
+        .songbookControlClear{right:6px;width:28px;height:28px}
+      }
+      @media(max-width:620px) and (orientation:landscape){[data-view="songbook"] .toolbar{top:68px!important}}
+    </style>`);
+    setupSongbookControls();
+  });
+})();

@@ -19,16 +19,19 @@ export function loadEnv(filePath) {
 
 export function isSummon(text) {
   const value = String(text || '');
-  return /(?:^|\s)@(?:bcd|house|doorman)\b/i.test(value)
-    || /(?:^|[.!?]\s+)(?:hey\s+)?bcd\s*[,?:]/i.test(value)
-    || /^(?:hey|hello|hi|good\s+(?:morning|afternoon|evening))\s+bcd\b/i.test(value.trim())
-    || /^ask\s+bcd\b/i.test(value.trim());
+  return /(?:^|\s)@(?:bcd|house|doorman|alfie)\b/i.test(value)
+    || /(?:^|[.!?]\s+)(?:hey\s+)?(?:bcd|alfie)\s*[,?:]/i.test(value)
+    || /^(?:hey|hello|hi|hiya|good\s+(?:morning|afternoon|evening))\s+(?:bcd|alfie)\b/i.test(value.trim())
+    || /^ask\s+(?:bcd|alfie)\b/i.test(value.trim());
 }
 
-export function shouldReplyToMessage(row) {
+export function shouldReplyToMessage(row, { requireExplicitSummon = true, ignoredPhrases = [] } = {}) {
+  const text = String(row?.message || '');
+  const ignored = ignoredPhrases.some(phrase => phrase && text.toLowerCase().includes(String(phrase).toLowerCase()));
   return Boolean(row)
     && row.profile_id !== 'bcd-house-guide'
-    && isSummon(row.message);
+    && !ignored
+    && (requireExplicitSummon ? isSummon(text) : Boolean(text.trim()))
 }
 
 export function chatbotSetting(rows) {
@@ -45,9 +48,9 @@ export function chatbotSetting(rows) {
 
 export function stripSummon(text) {
   return String(text || '')
-    .replace(/(?:^|\s)@(?:bcd|house|doorman)\b[,:]?/ig, ' ')
-    .replace(/^(?:hey\s+)?bcd\s*[,?:]\s*/i, '')
-    .replace(/^ask\s+bcd\s*[:,]?\s*/i, '')
+    .replace(/(?:^|\s)@(?:bcd|house|doorman|alfie)\b[,:]?/ig, ' ')
+    .replace(/^(?:hey\s+)?(?:bcd|alfie)\s*[,?:]\s*/i, '')
+    .replace(/^ask\s+(?:bcd|alfie)\s*[:,]?\s*/i, '')
     .trim();
 }
 
@@ -81,7 +84,9 @@ export function songSearch(songs, query, limit = 8) {
 
 function flattenFacts(value, prefix = '') {
   if (Array.isArray(value)) return value.flatMap(item => flattenFacts(item, prefix));
-  if (value && typeof value === 'object') return Object.entries(value).flatMap(([key, item]) => flattenFacts(item, prefix ? `${prefix} ${key}` : key));
+  if (value && typeof value === 'object') return Object.entries(value)
+    .filter(([key]) => key !== 'source' && key !== 'addedAt')
+    .flatMap(([key, item]) => flattenFacts(item, prefix ? `${prefix} ${key}` : key));
   return value === null || value === undefined || value === '' ? [] : [`${prefix}: ${value}`];
 }
 
