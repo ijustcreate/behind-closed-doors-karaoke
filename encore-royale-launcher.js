@@ -3,7 +3,7 @@
 
   const LOCAL_PREVIEW = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('encore-dev') === '1';
   const TUG_THRESHOLD = 285;
-  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/Celestefall/?embed=1&from=bcd&build=encore-brand';
+  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/Celestefall/?embed=1&from=bcd&build=encore-royal-room';
   const navigatorWithStandalone = navigator;
   const journey = { started:false, invalid:false, maxScroll:0 };
   let portal = null;
@@ -72,7 +72,11 @@
       sungSongs: sungSongs(),
       isAdmin: user?.isAdmin === true && !user?.guest,
       installed: true,
-      roomId: 'backstage-lobby'
+      roomId: 'encore-royal-main',
+      // These are the same browser-safe publishable credentials already used
+      // by BCD. The child never receives a service-role secret.
+      realtimeUrl: typeof SUPABASE_URL === 'string' ? SUPABASE_URL : '',
+      realtimeKey: typeof SUPABASE_KEY === 'string' ? SUPABASE_KEY : ''
     };
   }
 
@@ -81,8 +85,8 @@
     portal = document.createElement('section');
     portal.id = 'encorePortal';
     portal.className = 'encore-portal';
-    portal.setAttribute('aria-label', 'Secret Celestefall entrance');
-    portal.innerHTML = `<iframe title="Celestefall" allow="fullscreen; gamepad" src="${GAME_URL}"></iframe><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">×</button>`;
+    portal.setAttribute('aria-label', 'BCDKC Encore Royal entrance');
+    portal.innerHTML = `<iframe title="BCDKC Encore Royal" allow="fullscreen; gamepad" src="${GAME_URL}"></iframe><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">×</button>`;
     document.body.append(portal);
     frame = portal.querySelector('iframe');
     portal.querySelector('.encore-portal-close').addEventListener('click', closePortal);
@@ -191,14 +195,14 @@
     launcher = document.createElement('section');
     launcher.id = 'encoreRoyalAdminLauncher';
     launcher.className = 'encore-admin-launcher';
-    launcher.innerHTML = `<div class="encore-admin-copy"><div class="eyebrow">Installed app · administrator preview</div><h2>Celestefall</h2><p>Bypass the secret songbook pull and enter the isolated game build directly.</p></div><button type="button" class="btn gold encore-launch-button">Enter Celestefall</button>`;
+    launcher.innerHTML = `<div class="encore-admin-copy"><div class="eyebrow">Installed app · administrator preview</div><h2>BCDKC Encore Royal</h2><p>Bypass the secret songbook pull and enter the live game room directly.</p></div><button type="button" class="btn gold encore-launch-button">Enter Encore Royal</button>`;
     launcher.querySelector('button').addEventListener('click', () => commitPortal({ instant:true }));
     profile.append(launcher);
   }
 
   window.openEncoreRoyale = function () {
     if (!isInstalled()) {
-      if (typeof toast === 'function') toast('Celestefall is only available in the installed BCDKC app');
+      if (typeof toast === 'function') toast('BCDKC Encore Royal is only available in the installed BCDKC app');
       return;
     }
     commitPortal({ instant:true });
@@ -219,6 +223,10 @@
       if (committed) openCurtains();
     }
     if (event.data.type === 'bcd:encore:close') closePortal();
+    if (event.data.type === 'bcd:encore:event') {
+      if (event.data.event === 'capture_point') window.awardAchievement?.('encore_capture');
+      if (event.data.event === 'first_pk') window.awardAchievement?.('killer_note');
+    }
   });
 
   window.addEventListener('wheel', event => {
