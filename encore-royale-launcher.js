@@ -3,7 +3,7 @@
 
   const LOCAL_PREVIEW = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('encore-dev') === '1';
   const TUG_THRESHOLD = 285;
-  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/bcd-kc-encore/?embed=1&from=bcd&build=1.1';
+  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/bcd-kc-encore/?embed=1&from=bcd&build=1.2';
   const navigatorWithStandalone = navigator;
   const journey = { started:false, invalid:false, maxScroll:0 };
   let portal = null;
@@ -12,6 +12,9 @@
   let ready = false;
   let reloadPending = false;
   let reloadTimer = 0;
+  let diagnosticsOpen = false;
+  let diagnosticsTimer = 0;
+  let diagnosticsReport = null;
   let disposalDone = null;
   let committed = false;
   let releaseTimer = 0;
@@ -118,11 +121,63 @@
     // Do not create the game iframe while somebody is only testing the secret
     // pull. An iframe starts its own JS, rendering, and network work as soon as
     // it is attached, so it belongs to the committed entrance only.
-    portal.innerHTML = `<div class="encore-game-mount"></div><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">×</button><div class="encore-reload-tools"><button class="encore-reload-button" type="button">Reload Encore</button><span class="encore-build-version" role="status" aria-live="polite">Version loading…</span></div>`;
+    portal.innerHTML = `<div class="encore-game-mount"></div><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">×</button><div class="encore-reload-tools"><button class="encore-reload-button" type="button">Reload Encore</button><button class="encore-diagnostics-button" type="button" aria-expanded="false">Diagnostics</button><section class="encore-diagnostics-panel" hidden><div class="encore-diagnostics-title">PHONE DIAGNOSTICS</div><pre class="encore-diagnostics-output">Collecting…</pre><button class="encore-copy-diagnostics" type="button">Copy report</button></section><span class="encore-build-version" role="status" aria-live="polite">Version loading…</span></div>`;
     document.body.append(portal);
     portal.querySelector('.encore-portal-close').addEventListener('click', closePortal);
     portal.querySelector('.encore-reload-button').addEventListener('click', reloadGame);
+    portal.querySelector('.encore-diagnostics-button').addEventListener('click', toggleDiagnostics);
+    portal.querySelector('.encore-copy-diagnostics').addEventListener('click', copyDiagnostics);
     return portal;
+  }
+
+  function diagnosticsText(report) {
+    if (!report) return 'Waiting for game…';
+    const p = report.presentation || {}, c = report.costs || {}, d = report.device || {}, r = report.runtime || {}, room = report.room || {};
+    return [
+      `Build  v${report.version || 'unknown'} · ${r.embedded ? 'embedded' : 'direct'}`,
+      `FPS    ${p.presentedFps ?? 'n/a'} presented · ${p.rafFps ?? 'n/a'} rAF`,
+      `Frame  ${p.averageFrameMs ?? 'n/a'}ms avg · ${p.maxFrameMs ?? 'n/a'}ms max · ${p.maxStallMs ?? 'n/a'}ms stall`,
+      `Cost   update ${c.averageUpdateMs ?? 'n/a'}ms · draw ${c.averageRenderMs ?? 'n/a'}ms`,
+      `Device ${d.viewport || 'n/a'} · DPR ${d.dpr ?? 'n/a'} · ${d.platform || 'n/a'}`,
+      `Mode   ${r.renderer || 'n/a'} · phone throttle ${r.touchPresentation ? 'on' : 'off'} · ${r.loadedRigs ?? 'n/a'} rigs`,
+      `Room   ${room.mode || 'n/a'} · ${room.status || 'n/a'} · ${room.admission || 'n/a'} · ${room.players ?? 'n/a'} players`,
+      `Assets ${r.failedRigs ?? 'n/a'} failed · ${r.sourceCacheEntries ?? 'n/a'} source cache · ${room.visibleRemotes ?? 'n/a'} visible remotes`,
+      `Sample ${report.sampleSeconds ?? 'n/a'}s · dropped frame gaps ${p.droppedFrames ?? 'n/a'}`
+    ].join('\n');
+  }
+
+  function renderDiagnostics() {
+    if (!portal) return;
+    portal.querySelector('.encore-diagnostics-output').textContent = diagnosticsText(diagnosticsReport);
+  }
+
+  function requestDiagnostics() {
+    if (!diagnosticsOpen || !frame?.contentWindow) return;
+    frame.contentWindow.postMessage({ type:'bcd:encore:diagnostics:request' }, new URL(frame.src, location.href).origin);
+  }
+
+  function toggleDiagnostics() {
+    if (!portal) return;
+    diagnosticsOpen = !diagnosticsOpen;
+    const button = portal.querySelector('.encore-diagnostics-button');
+    const panel = portal.querySelector('.encore-diagnostics-panel');
+    button.setAttribute('aria-expanded', String(diagnosticsOpen));
+    panel.hidden = !diagnosticsOpen;
+    if (diagnosticsOpen) {
+      diagnosticsReport = null; renderDiagnostics(); requestDiagnostics();
+      clearInterval(diagnosticsTimer); diagnosticsTimer = setInterval(requestDiagnostics, 1000);
+    } else clearInterval(diagnosticsTimer);
+  }
+
+  async function copyDiagnostics() {
+    const text = diagnosticsText(diagnosticsReport);
+    try { await navigator.clipboard.writeText(text); }
+    catch {
+      const area = document.createElement('textarea'); area.value = text; area.style.position = 'fixed'; area.style.opacity = '0';
+      document.body.append(area); area.select(); document.execCommand('copy'); area.remove();
+    }
+    const button = portal?.querySelector('.encore-copy-diagnostics');
+    if (button) { button.textContent = 'Copied'; setTimeout(() => { if (button.isConnected) button.textContent = 'Copy report'; }, 1200); }
   }
 
   function startGameFrame() {
@@ -254,8 +309,10 @@
   function closePortal() {
     if (!portal) return;
     clearTimeout(reloadTimer);
+    clearInterval(diagnosticsTimer);
     disposalDone?.();
     reloadPending = false;
+    diagnosticsReport = null;
     // Ask the game to dispose cleanly, then immediately navigate it away. The
     // navigation aborts its animation loop and any future realtime work even if
     // the close message is delayed or the app is being backgrounded on a phone.
@@ -267,6 +324,7 @@
     frame = null;
     ready = false;
     committed = false;
+    diagnosticsOpen = false;
     rawTug = 0;
     document.body.classList.remove('encore-tugging', 'encore-portal-open');
     resumeSite();
@@ -321,6 +379,10 @@
       updateReloadUI(version ? `v${version}` : 'Version unavailable');
       sendSession();
       if (committed) openCurtains();
+    }
+    if (event.data.type === 'bcd:encore:diagnostics:report' && event.data.report && typeof event.data.report === 'object') {
+      diagnosticsReport = { ...event.data.report, version: typeof event.data.version === 'string' ? event.data.version.slice(0, 16) : 'unknown' };
+      renderDiagnostics();
     }
     if (event.data.type === 'bcd:encore:close') closePortal();
     if (event.data.type === 'bcd:encore:event') {
