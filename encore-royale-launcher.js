@@ -3,16 +3,46 @@
 
   const LOCAL_PREVIEW = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('encore-dev') === '1';
   const TUG_THRESHOLD = 285;
-  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/Celestefall/?embed=1&from=bcd&build=encore-team-capture';
+  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/Celestefall/?embed=1&from=bcd&build=encore-lifecycle';
   const navigatorWithStandalone = navigator;
   const journey = { started:false, invalid:false, maxScroll:0 };
   let portal = null;
   let frame = null;
   let rawTug = 0;
   let ready = false;
+  let reloadPending = false;
+  let reloadTimer = 0;
+  let disposalDone = null;
   let committed = false;
   let releaseTimer = 0;
   let touchY = null;
+  let suspendedSite = null;
+  let suspendedAriaHidden = null;
+  let suspendedInert = false;
+
+  // The karaoke app stays loaded so returning from the battle is instant, but
+  // its view is made non-interactive and skipped by paint/layout while Encore
+  // owns the screen. App code can also listen for this event to pause optional
+  // polling or animations without coupling the game to the site's internals.
+  function suspendSite() {
+    if (suspendedSite) return;
+    suspendedSite = document.querySelector('body > .shell') || document.querySelector('.shell');
+    if (!suspendedSite) return;
+    suspendedAriaHidden = suspendedSite.getAttribute('aria-hidden');
+    suspendedInert = !!suspendedSite.inert;
+    suspendedSite.inert = true;
+    suspendedSite.setAttribute('aria-hidden', 'true');
+    document.dispatchEvent(new CustomEvent('bcd:encore:active', { detail:{ active:true } }));
+  }
+
+  function resumeSite() {
+    if (!suspendedSite) return;
+    suspendedSite.inert = suspendedInert;
+    if (suspendedAriaHidden === null) suspendedSite.removeAttribute('aria-hidden');
+    else suspendedSite.setAttribute('aria-hidden', suspendedAriaHidden);
+    suspendedSite = null;
+    document.dispatchEvent(new CustomEvent('bcd:encore:active', { detail:{ active:false } }));
+  }
 
   function isInstalled() {
     return LOCAL_PREVIEW || document.documentElement.classList.contains('pwa-standalone') || document.body?.classList.contains('pwa-standalone') || matchMedia('(display-mode: standalone)').matches || navigatorWithStandalone.standalone === true;
@@ -86,11 +116,63 @@
     portal.id = 'encorePortal';
     portal.className = 'encore-portal';
     portal.setAttribute('aria-label', 'BCDKC Encore Royal entrance');
-    portal.innerHTML = `<iframe title="BCDKC Encore Royal" allow="fullscreen; gamepad" src="${GAME_URL}"></iframe><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">Ã—</button>`;
+    // Do not create the game iframe while somebody is only testing the secret
+    // pull. An iframe starts its own JS, rendering, and network work as soon as
+    // it is attached, so it belongs to the committed entrance only.
+    portal.innerHTML = `<div class="encore-game-mount"></div><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">Ã—</button><div class="encore-reload-tools"><button class="encore-reload-button" type="button">Reload Encore</button><span class="encore-build-version" role="status" aria-live="polite">Version loading…</span></div>`;
     document.body.append(portal);
-    frame = portal.querySelector('iframe');
     portal.querySelector('.encore-portal-close').addEventListener('click', closePortal);
+    portal.querySelector('.encore-reload-button').addEventListener('click', reloadGame);
     return portal;
+  }
+
+  function startGameFrame() {
+    if (!portal || frame) return frame;
+    const mount = portal.querySelector('.encore-game-mount');
+    frame = document.createElement('iframe');
+    frame.title = 'BCDKC Encore Royal';
+    frame.allow = 'fullscreen; gamepad';
+    // Keeping this isolated makes the game an independently deployable app and
+    // prevents it from competing with BCD until the player explicitly enters.
+    const url = new URL(GAME_URL, location.href);
+    url.searchParams.set('fresh', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    frame.src = url.href;
+    mount?.append(frame);
+    return frame;
+  }
+
+  function updateReloadUI(message) {
+    if (!portal) return;
+    const button = portal.querySelector('.encore-reload-button');
+    button.disabled = reloadPending;
+    button.textContent = reloadPending ? 'Reloading…' : 'Reload Encore';
+    portal.querySelector('.encore-build-version').textContent = message;
+  }
+
+  async function reloadGame() {
+    if (!committed || !frame || reloadPending) return;
+    reloadPending = true;
+    updateReloadUI('Fetching latest…');
+    const oldFrame = frame;
+    const currentPortal = portal;
+    // Wait briefly for presence unsubscribe before replacing the browsing
+    // context. The timeout also supports older builds without shutdown ACKs.
+    await new Promise(resolve => {
+      const timer = setTimeout(resolve, 1500);
+      disposalDone = () => { clearTimeout(timer); resolve(); };
+      oldFrame.contentWindow?.postMessage({ type:'bcd:encore:command', payload:{ command:'close' } }, new URL(oldFrame.src).origin);
+    });
+    disposalDone = null;
+    if (portal !== currentPortal || frame !== oldFrame) return;
+    ready = false;
+    oldFrame.src = 'about:blank';
+    oldFrame.remove(); // Destroys old JS globals, loops, listeners, and sockets.
+    frame = null;
+    startGameFrame();
+    reloadTimer = setTimeout(() => {
+      reloadPending = false;
+      updateReloadUI('Load timed out · retry');
+    }, 45000);
   }
 
   function sendSession() {
@@ -148,10 +230,12 @@
     if (committed || !isInstalled()) return;
     committed = true;
     ensurePortal();
+    startGameFrame();
     setTug(TUG_THRESHOLD);
     portal.classList.add('is-committed');
     document.body.classList.remove('encore-tugging');
     document.body.classList.add('encore-portal-open');
+    suspendSite();
     sendSession();
     const minimumDrama = options?.instant ? 100 : 420;
     setTimeout(() => {
@@ -168,7 +252,14 @@
 
   function closePortal() {
     if (!portal) return;
+    clearTimeout(reloadTimer);
+    disposalDone?.();
+    reloadPending = false;
+    // Ask the game to dispose cleanly, then immediately navigate it away. The
+    // navigation aborts its animation loop and any future realtime work even if
+    // the close message is delayed or the app is being backgrounded on a phone.
     frame?.contentWindow?.postMessage({ type:'bcd:encore:command', payload:{ command:'close' } }, '*');
+    if (frame) frame.src = 'about:blank';
     portal.classList.add('is-closing');
     const old = portal;
     portal = null;
@@ -177,6 +268,7 @@
     committed = false;
     rawTug = 0;
     document.body.classList.remove('encore-tugging', 'encore-portal-open');
+    resumeSite();
     document.documentElement.style.setProperty('--encore-site-lift', '0px');
     setTimeout(() => old.remove(), 340);
   }
@@ -217,8 +309,15 @@
 
   window.addEventListener('message', event => {
     if (!frame?.contentWindow || event.source !== frame.contentWindow || !event.data) return;
+    if (event.origin !== new URL(frame.src, location.href).origin) return;
+    if (event.data.type === 'bcd:encore:disposed') disposalDone?.();
     if (event.data.type === 'bcd:encore:ready') {
+      if (ready) return;
       ready = true;
+      clearTimeout(reloadTimer);
+      reloadPending = false;
+      const version = typeof event.data.version === 'string' ? event.data.version.slice(0, 32) : '';
+      updateReloadUI(version ? `v${version}` : 'Version unavailable');
       sendSession();
       if (committed) openCurtains();
     }
@@ -248,6 +347,13 @@
   window.addEventListener('touchend', () => { touchY = null; if (!committed) relaxTug(); }, { passive:true });
   window.addEventListener('scroll', updateJourney, { passive:true });
   window.addEventListener('resize', () => { if (rawTug && !committed) setTug(rawTug); }, { passive:true });
+  // On mobile, leaving a PWA commonly fires visibilitychange without unloading
+  // the page. Tear Encore down in that case so it cannot keep consuming battery
+  // or CPU in the background. Re-entering the app leaves the user on BCD.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') closePortal();
+  }, { passive:true });
+  window.addEventListener('pagehide', closePortal, { passive:true });
   document.addEventListener('pointerdown', event => {
     if (event.target.closest?.('.alphaButton') && journey.started) journey.invalid = true;
   }, true);

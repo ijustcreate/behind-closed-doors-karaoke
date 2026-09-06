@@ -5,6 +5,9 @@
 html{--encore-site-lift:0px}
 body.encore-tugging>.shell{transform:translateY(calc(-1 * var(--encore-site-lift)));transform-origin:50% 100%;transition:none!important;will-change:transform}
 body.encore-portal-open{overflow:hidden!important;overscroll-behavior:none}
+/* Keep the BCD DOM in memory for an instant return, but take it out of the
+   browser's paint and hit-test work for the duration of a battle. */
+body.encore-portal-open>.shell{content-visibility:hidden;contain:layout style paint;visibility:hidden;pointer-events:none}
 .encore-portal{--encore-reveal:0px;position:fixed;z-index:100000;inset:0;overflow:hidden;clip-path:inset(calc(100% - var(--encore-reveal)) 0 0);background:#040308;pointer-events:none;transition:clip-path .18s ease-out}
 .encore-portal.is-committed{--encore-reveal:100vh!important;clip-path:inset(0);pointer-events:auto;transition:clip-path .48s cubic-bezier(.17,.83,.32,1)}
 .encore-portal iframe{position:absolute;z-index:0;inset:0;width:100%;height:100%;border:0;background:#080715;opacity:0;transition:opacity .25s ease}
@@ -24,3 +27,9 @@ body.encore-portal-open{overflow:hidden!important;overscroll-behavior:none}
 .encore-portal.is-closing{opacity:0;transition:opacity .32s ease}
 @media(max-width:700px){.encore-admin-launcher{grid-template-columns:1fr}.encore-launch-button{width:100%}.encore-portal-hint{font-size:8px;letter-spacing:.11em}}
 @media(prefers-reduced-motion:reduce){.encore-curtain,.encore-portal,.encore-portal-mark{transition-duration:.01ms!important}}
+
+.encore-reload-tools{position:absolute;z-index:8;right:max(12px,env(safe-area-inset-right));top:calc(max(12px,env(safe-area-inset-top)) + 46px);display:none;width:116px;text-align:center;color:#ecd89e;font:600 11px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace}
+.encore-portal.is-opening .encore-reload-tools{display:grid;gap:4px}
+.encore-reload-button{min-height:44px;width:100%;padding:6px;border:1px solid rgba(226,194,122,.65);border-radius:6px;background:#211729;color:#f3db9d;font:700 12px/1.2 system-ui,sans-serif;touch-action:manipulation;cursor:pointer}
+.encore-reload-button:disabled{opacity:.7;cursor:wait}.encore-reload-button:focus-visible{outline:2px solid #fff4cf;outline-offset:2px}
+.encore-build-version{padding:3px;border-radius:4px;background:rgba(18,11,26,.92);overflow-wrap:anywhere}
