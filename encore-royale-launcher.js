@@ -121,7 +121,7 @@
     // Do not create the game iframe while somebody is only testing the secret
     // pull. An iframe starts its own JS, rendering, and network work as soon as
     // it is attached, so it belongs to the committed entrance only.
-    portal.innerHTML = `<div class="encore-game-mount"></div><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">×</button><div class="encore-reload-tools"><button class="encore-reload-button" type="button">Reload Encore</button><button class="encore-diagnostics-button" type="button" aria-expanded="false">Diagnostics</button><section class="encore-diagnostics-panel" hidden><div class="encore-diagnostics-title">PHONE DIAGNOSTICS</div><pre class="encore-diagnostics-output">Collecting…</pre><button class="encore-copy-diagnostics" type="button">Copy report</button></section><span class="encore-build-version" role="status" aria-live="polite">Version loading…</span></div>`;
+    portal.innerHTML = `<div class="encore-game-mount"></div><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">×</button><div class="encore-reload-tools"><button class="encore-reload-button" type="button">Reload Encore</button><button class="encore-diagnostics-button" type="button" aria-expanded="false">📱 Phone diagnostics</button><section class="encore-diagnostics-panel" hidden><div class="encore-diagnostics-title">PHONE DIAGNOSTICS · NO TELEMETRY</div><pre class="encore-diagnostics-output">Collecting…</pre><button class="encore-copy-diagnostics" type="button">Copy report</button></section><span class="encore-build-version" role="status" aria-live="polite">Version loading…</span></div>`;
     document.body.append(portal);
     portal.querySelector('.encore-portal-close').addEventListener('click', closePortal);
     portal.querySelector('.encore-reload-button').addEventListener('click', reloadGame);
@@ -138,11 +138,17 @@
       `FPS    ${p.presentedFps ?? 'n/a'} presented · ${p.rafFps ?? 'n/a'} rAF`,
       `Frame  ${p.averageFrameMs ?? 'n/a'}ms avg · ${p.maxFrameMs ?? 'n/a'}ms max · ${p.maxStallMs ?? 'n/a'}ms stall`,
       `Cost   update ${c.averageUpdateMs ?? 'n/a'}ms · draw ${c.averageRenderMs ?? 'n/a'}ms`,
-      `Device ${d.viewport || 'n/a'} · DPR ${d.dpr ?? 'n/a'} · ${d.platform || 'n/a'}`,
-      `Mode   ${r.renderer || 'n/a'} · phone throttle ${r.touchPresentation ? 'on' : 'off'} · ${r.loadedRigs ?? 'n/a'} rigs`,
-      `Room   ${room.mode || 'n/a'} · ${room.status || 'n/a'} · ${room.admission || 'n/a'} · ${room.players ?? 'n/a'} players`,
-      `Assets ${r.failedRigs ?? 'n/a'} failed · ${r.sourceCacheEntries ?? 'n/a'} source cache · ${room.visibleRemotes ?? 'n/a'} visible remotes`,
-      `Sample ${report.sampleSeconds ?? 'n/a'}s · dropped frame gaps ${p.droppedFrames ?? 'n/a'}`
+      `View   ${d.viewport || 'unavailable'} · screen ${d.screen || 'unavailable'} · DPR ${d.dpr ?? 'unavailable'}`,
+      `Orient ${d.orientation || 'unavailable'} · ${d.platform || 'platform unavailable'}`,
+      `State  ${r.visibility || 'unavailable'} · focus ${r.focused == null ? 'unavailable' : r.focused ? 'yes' : 'no'}`,
+      `Render ${r.renderer || 'unavailable'} · ${r.quality || 'quality unavailable'}`,
+      `Limit  ${r.touchPresentation ? 'phone throttle on' : 'phone throttle off'} · cap ${r.presentationCap ?? 'unavailable'} FPS`,
+      `Room   ${room.mode || 'unavailable'} · status ${room.status || 'unavailable'} · admission ${room.admission || 'unavailable'}`,
+      `Count  ${room.occupancyVerified ? `${room.players}/8 verified` : 'unavailable (not verified)'} · ${room.visibleRemotes ?? 'unavailable'} visible remotes`,
+      `Assets rigs ${r.loadedRigs ?? 'unavailable'} loaded · ${Array.isArray(r.failedRigs) ? r.failedRigs.length : r.failedRigs ?? 'unavailable'} failed · images ${Array.isArray(r.failedImages) ? r.failedImages.length : r.failedImages ?? 'unavailable'} failed`,
+      `Sample ${report.sampleSeconds ?? 'unavailable'}s · frame gaps >50ms ${p.droppedFrames ?? 'unavailable'}`,
+      `UA     ${d.userAgent || 'unavailable'}`,
+      `N/A    ${Array.isArray(report.unavailable) ? report.unavailable.join(', ') : 'unavailable browser metrics not reported'}`
     ].join('\n');
   }
 
