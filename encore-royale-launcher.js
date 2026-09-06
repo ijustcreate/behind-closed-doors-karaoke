@@ -133,6 +133,7 @@
   function diagnosticsText(report) {
     if (!report) return 'Waiting for game…';
     const p = report.presentation || {}, c = report.costs || {}, d = report.device || {}, r = report.runtime || {}, room = report.room || {};
+    const roomMode = room.mode === 'offline-practice' ? 'OFFLINE PRACTICE' : room.mode || 'unavailable';
     return [
       `Build  v${report.version || 'unknown'} · ${r.embedded ? 'embedded' : 'direct'}`,
       `FPS    ${p.presentedFps ?? 'n/a'} presented · ${p.rafFps ?? 'n/a'} rAF`,
@@ -143,7 +144,7 @@
       `State  ${r.visibility || 'unavailable'} · focus ${r.focused == null ? 'unavailable' : r.focused ? 'yes' : 'no'}`,
       `Render ${r.renderer || 'unavailable'} · ${r.quality || 'quality unavailable'}`,
       `Limit  ${r.touchPresentation ? 'phone throttle on' : 'phone throttle off'} · cap ${r.presentationCap ?? 'unavailable'} FPS`,
-      `Room   ${room.mode || 'unavailable'} · status ${room.status || 'unavailable'} · admission ${room.admission || 'unavailable'}`,
+      `Room   ${roomMode} · status ${room.status || 'unavailable'} · admission ${room.admission || 'unavailable'}`,
       `Count  ${room.occupancyVerified ? `${room.players}/8 verified` : 'unavailable (not verified)'} · ${room.visibleRemotes ?? 'unavailable'} visible remotes`,
       `Assets rigs ${r.loadedRigs ?? 'unavailable'} loaded · ${Array.isArray(r.failedRigs) ? r.failedRigs.length : r.failedRigs ?? 'unavailable'} failed · images ${Array.isArray(r.failedImages) ? r.failedImages.length : r.failedImages ?? 'unavailable'} failed`,
       `Sample ${report.sampleSeconds ?? 'unavailable'}s · frame gaps >50ms ${p.droppedFrames ?? 'unavailable'}`,
