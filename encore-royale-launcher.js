@@ -3,7 +3,7 @@
 
   const LOCAL_PREVIEW = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).get('encore-dev') === '1';
   const TUG_THRESHOLD = 285;
-  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/Celestefall/?embed=1&from=bcd&build=encore-lifecycle';
+  const GAME_URL = window.ENCORE_ROYALE_URL || 'https://ijustcreate.github.io/bcd-kc-encore/?embed=1&from=bcd&build=1.1';
   const navigatorWithStandalone = navigator;
   const journey = { started:false, invalid:false, maxScroll:0 };
   let portal = null;
@@ -98,15 +98,14 @@
     try { user = currentUser(); } catch {}
     return {
       playerId: user?.id || 'installed-player',
-      playerName: user?.name || 'Cole',
+      playerName: typeof user?.name === 'string' && user.name.trim() ? user.name.trim().slice(0, 32) : 'Climber',
       sungSongs: sungSongs(),
       isAdmin: user?.isAdmin === true && !user?.guest,
       installed: true,
       roomId: 'encore-royal-main',
-      // These are the same browser-safe publishable credentials already used
-      // by BCD. The child never receives a service-role secret.
-      realtimeUrl: typeof SUPABASE_URL === 'string' ? SUPABASE_URL : '',
-      realtimeKey: typeof SUPABASE_KEY === 'string' ? SUPABASE_KEY : ''
+      // The game also has its own published endpoint configuration. Empty
+      // means offline practice, never a peer-simulated replacement room.
+      serverUrl: window.ENCORE_SERVER_URL || ''
     };
   }
 
@@ -119,7 +118,7 @@
     // Do not create the game iframe while somebody is only testing the secret
     // pull. An iframe starts its own JS, rendering, and network work as soon as
     // it is attached, so it belongs to the committed entrance only.
-    portal.innerHTML = `<div class="encore-game-mount"></div><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">Ã—</button><div class="encore-reload-tools"><button class="encore-reload-button" type="button">Reload Encore</button><span class="encore-build-version" role="status" aria-live="polite">Version loading…</span></div>`;
+    portal.innerHTML = `<div class="encore-game-mount"></div><div class="encore-curtain encore-curtain-left"></div><div class="encore-curtain encore-curtain-right"></div><img class="encore-valance" src="assets/encore/curtain-valance.png" alt=""><img class="encore-portal-mark" src="assets/bcd-karaoke-logo.jpg" alt=""><div class="encore-portal-hint">There is something beneath the songbook<br>keep pulling</div><button class="encore-portal-close" type="button" aria-label="Return to BCD Karaoke">Ã—</button><div class="encore-reload-tools"><button class="encore-reload-button" type="button">Reload Encore</button><span class="encore-build-version" role="status" aria-live="polite">Version loadingâ€¦</span></div>`;
     document.body.append(portal);
     portal.querySelector('.encore-portal-close').addEventListener('click', closePortal);
     portal.querySelector('.encore-reload-button').addEventListener('click', reloadGame);
@@ -137,6 +136,9 @@
     const url = new URL(GAME_URL, location.href);
     url.searchParams.set('fresh', `${Date.now()}-${Math.random().toString(36).slice(2)}`);
     frame.src = url.href;
+    // Initialize on load too, including older builds without a ready message.
+    // sendSession always targets the exact game origin.
+    frame.addEventListener('load', () => sendSession(true));
     mount?.append(frame);
     return frame;
   }
@@ -145,14 +147,14 @@
     if (!portal) return;
     const button = portal.querySelector('.encore-reload-button');
     button.disabled = reloadPending;
-    button.textContent = reloadPending ? 'Reloading…' : 'Reload Encore';
+    button.textContent = reloadPending ? 'Reloadingâ€¦' : 'Reload Encore';
     portal.querySelector('.encore-build-version').textContent = message;
   }
 
   async function reloadGame() {
     if (!committed || !frame || reloadPending) return;
     reloadPending = true;
-    updateReloadUI('Fetching latest…');
+    updateReloadUI('Fetching latestâ€¦');
     const oldFrame = frame;
     const currentPortal = portal;
     // Wait briefly for presence unsubscribe before replacing the browsing
@@ -171,17 +173,16 @@
     startGameFrame();
     reloadTimer = setTimeout(() => {
       reloadPending = false;
-      updateReloadUI('Load timed out · retry');
+      updateReloadUI('Load timed out Â· retry');
     }, 45000);
   }
 
-  function sendSession() {
-    // The isolated game announces readiness after navigation. Waiting for that
-    // handshake avoids posting private session context into the iframe's
-    // initial about:blank document and prevents cross-origin console noise.
-    if (!ready || !frame?.contentWindow) return;
-    let targetOrigin = '*';
-    try { targetOrigin = new URL(frame.src, location.href).origin; } catch {}
+  function sendSession(loaded = false) {
+    // Only send after navigation/load or the game readiness handshake.
+    if ((!ready && !loaded) || !frame?.contentWindow) return;
+    let targetOrigin;
+    try { targetOrigin = new URL(frame.src, location.href).origin; } catch { return; }
+    if (targetOrigin === 'null') return;
     frame.contentWindow.postMessage({ type:'bcd:encore:init', payload:initPayload() }, targetOrigin);
   }
 
@@ -366,6 +367,16 @@
   window.addEventListener('DOMContentLoaded', () => {
     updateJourney();
     ensureAdminLauncher();
+    // Keep the open game in sync when an account is restored or renamed.
+    let lastIdentity = '';
+    setInterval(() => {
+      if (!ready || !frame) { lastIdentity = ''; return; }
+      const payload = initPayload();
+      const identity = JSON.stringify([payload.playerId, payload.playerName]);
+      if (identity === lastIdentity) return;
+      lastIdentity = identity;
+      sendSession();
+    }, 1000);
     const profile = document.getElementById('profileView');
     if (profile) new MutationObserver(() => requestAnimationFrame(ensureAdminLauncher)).observe(profile, { childList:true, subtree:true });
     if (LOCAL_PREVIEW && new URLSearchParams(location.search).get('encore-open') === '1') setTimeout(() => commitPortal({ instant:true }), 80);
