@@ -24,7 +24,7 @@ Open `index.html` directly in a modern browser.
 Upload the folder to any static host (GitHub Pages, Netlify, Cloudflare Pages, etc.).
 
 ## Storage
-Singer account names and the current night's requests/queue are shared through Supabase. Favorites, personal history, and the remembered device session stay private in that browser's `localStorage`.
+Singer account names and the current night's requests/queue are shared through Supabase. Favorites and personal history are stored in the account-scoped `karaoke_personal_libraries` row; the browser keeps a local cache and deletion tombstones so stale devices cannot restore removed history. The remembered device session stays private in `localStorage`.
 
 ## Genre tagging
 Genres are broad automated venue categories (not a canonical musicology database). The production version should expose staff tag editing and persist corrections server-side.

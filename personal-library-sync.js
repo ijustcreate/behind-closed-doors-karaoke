@@ -8,8 +8,10 @@
   const profileCredential = user => {
     try { return localStorage.getItem(`bcd-profile-${user.id}`) || sessionStorage.getItem(`bcd-profile-${user.id}`) || localStorage.getItem(`bcd-admin-${user.id}`) || sessionStorage.getItem(`bcd-admin-${user.id}`) || (user.passwordHash && user.passwordHash !== 'REMOTE' ? user.passwordHash : null); } catch { return null; }
   };
-  const keyFor = (row, kind) => kind === 'favorite' ? String(row.songId || '') : `${row.songId || ''}:${row.status || 'requested'}:${row.requestedAt || row.completedAt || row.id || ''}`;
+  const keyFor = (row, kind) => kind === 'favorite' ? String(row.songId || '') : String(row.id || '') || `${row.songId || ''}:${row.status || 'requested'}:${row.requestedAt || row.completedAt || ''}`;
   const merge = (first, second, kind) => { const seen = new Map(); [...first, ...second].forEach(row => { const key = keyFor(row, kind); if (key && !seen.has(key)) seen.set(key, row); }); return [...seen.values()].sort((a, b) => Number(b.createdAt || b.requestedAt || b.completedAt || 0) - Number(a.createdAt || a.requestedAt || a.completedAt || 0)); };
+  const localTombstones = (state, user) => new Set(Array.isArray(state.historyTombstones?.[user.id]) ? state.historyTombstones[user.id].map(String) : []);
+  const rememberTombstones = (state, user, ids) => { state.historyTombstones = state.historyTombstones || {}; state.historyTombstones[user.id] = [...new Set(ids)].slice(-5000); };
   async function call(user, op, library) {
     const credential = profileCredential(user);
     const key = window.BCD_SYNC_CONFIG?.key;
@@ -21,11 +23,13 @@
     try {
       const remote = await call(user, 'load');
       const state = window.getBcdState?.(); if (!state) return;
+      const tombstones = new Set([...localTombstones(state, user), ...(remote.historyTombstones || []).map(String)]);
       const favorites = merge(own(state.favorites, user), remote.favorites || [], 'favorite').map(row => ({ ...row, userId: user.id }));
-      const history = merge(own(state.history, user), remote.history || [], 'history').map(row => ({ ...row, userId: user.id }));
+      const history = merge(own(state.history, user), remote.history || [], 'history').filter(row => !tombstones.has(String(row.id || ''))).map(row => ({ ...row, userId: user.id }));
+      rememberTombstones(state, user, tombstones);
       state.favorites = (state.favorites || []).filter(row => row.userId !== user.id).concat(favorites);
       state.history = (state.history || []).filter(row => row.userId !== user.id).concat(history);
-      window.saveState?.(); if (window.activeTab === 'profile') window.renderProfile?.(); await call(user, 'save', { favorites, history });
+      window.saveState?.(); if (window.activeTab === 'profile') window.renderProfile?.(); await call(user, 'save', { favorites, history, historyTombstones: [...tombstones] });
     } catch (error) { console.warn('Personal library sync unavailable', error); } finally { syncing = false; }
   }
   function queueLibrarySync(delay = 250) { clearTimeout(timer); timer = setTimeout(syncPersonalLibrary, delay); }

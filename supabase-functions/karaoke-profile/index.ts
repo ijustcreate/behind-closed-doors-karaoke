@@ -13,8 +13,10 @@ const validLanternOverride=(value:unknown)=>{
  const candidate=value as Record<string,unknown>,key=String(candidate.key||"");
  return /^\d{4}-\d{2}-\d{2}$/.test(key)&&typeof candidate.on==="boolean"?{key,on:candidate.on}:null;
 };
-const safeLibrary=(library:unknown,profileId:string)=>{
+const cleanTombstones=(value:unknown)=>Array.isArray(value)?[...new Set(value.flatMap(item=>{const id=String(item||"").slice(0,100);return id?[id]:[]}))].slice(-5000):[];
+const safeLibrary=(library:unknown,profileId:string,baseTombstones:unknown[]=[])=>{
  const source=library&&typeof library==="object"?library as Record<string,unknown>:{};
+ const historyTombstones=cleanTombstones([...baseTombstones,...cleanTombstones(source.historyTombstones??source.history_tombstones)]);
  const favorites=(Array.isArray(source.favorites)?source.favorites:[]).slice(0,500).flatMap((item:any)=>{
   const songId=String(item?.songId||"").slice(0,80);return songId?[{id:String(item?.id||crypto.randomUUID()).slice(0,100),userId:profileId,songId,createdAt:Number(item?.createdAt)||Date.now()}]:[];
  });
@@ -22,7 +24,7 @@ const safeLibrary=(library:unknown,profileId:string)=>{
   const songId=String(item?.songId||"").slice(0,80),status=item?.status==="sung"?"sung":"requested";
   return songId?[{id:String(item?.id||crypto.randomUUID()).slice(0,100),userId:profileId,songId,status,requestedAt:Number(item?.requestedAt)||Date.now(),completedAt:Number(item?.completedAt)||null,score:Number.isFinite(Number(item?.score))?Math.max(0,Math.min(100,Number(item.score))):undefined}]:[];
  });
- return {favorites,history};
+ return {favorites,history:history.filter((item:any)=>!historyTombstones.includes(String(item.id))),historyTombstones};
 };
 
 Deno.serve(async(req)=>{
@@ -51,12 +53,14 @@ Deno.serve(async(req)=>{
    if(!profile)return json({error:"Account not found"},404);
    if(hasCredential(profile)&&!matchesCredential(profile,body.passwordHash,body.passwordFoldedHash))return json({error:"Profile authorization required"},401);
    if(body.op==="save"){
-    const library=safeLibrary(body.library,profileId);
-    const {error}=await admin.from("karaoke_personal_libraries").upsert({profile_id:profileId,favorites:library.favorites,history:library.history,updated_at:new Date().toISOString()},{onConflict:"profile_id"});
+    const {data:current,error:currentError}=await admin.from("karaoke_personal_libraries").select("history_tombstones").eq("profile_id",profileId).maybeSingle();
+    if(currentError)throw currentError;
+    const library=safeLibrary(body.library,profileId,current?.history_tombstones||[]);
+    const {error}=await admin.from("karaoke_personal_libraries").upsert({profile_id:profileId,favorites:library.favorites,history:library.history,history_tombstones:library.historyTombstones,updated_at:new Date().toISOString()},{onConflict:"profile_id"});
     if(error)throw error;
     return json({status:"ok",library});
    }
-   const {data,error}=await admin.from("karaoke_personal_libraries").select("favorites,history,updated_at").eq("profile_id",profileId).maybeSingle();
+   const {data,error}=await admin.from("karaoke_personal_libraries").select("favorites,history,history_tombstones,updated_at").eq("profile_id",profileId).maybeSingle();
    if(error)throw error;
    return json({status:"ok",library:safeLibrary(data||{},profileId),updatedAt:data?.updated_at||null});
   }

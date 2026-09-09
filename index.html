@@ -79,7 +79,7 @@ const STORAGE_KEY='bcd_karaoke_state_v1';
 const SUPABASE_URL='https://dxmovgixxmepunzvgvrj.supabase.co';
 const SUPABASE_KEY='sb_publishable_YNB91eZ4vBqxYr4yNKtyPQ__zUQsGFk';
 window.BCD_SYNC_CONFIG={url:SUPABASE_URL,key:SUPABASE_KEY};
-const defaultState={users:[],currentUserId:null,requests:[],queue:[],history:[],favorites:[],genreOverrides:{},karaokeHostMode:false};
+const defaultState={users:[],currentUserId:null,requests:[],queue:[],history:[],favorites:[],historyTombstones:{},genreOverrides:{},karaokeHostMode:false};
 let state=loadState();
 let activeTab='songbook';
 let visibleLimit=200;
@@ -221,7 +221,7 @@ function doneQueue(id){const i=state.queue.findIndex(q=>q.id===id);if(i<0)return
 function removeQueue(id){const i=state.queue.findIndex(q=>q.id===id);if(i<0)return;const [q]=state.queue.splice(i,1);const r=state.requests.find(r=>r.id===q.requestId);if(r&&r.status==='queued')r.status='pending';saveState();updateSharedRequest(q.requestId,{status:'pending',position:null});persistQueueOrder();renderQueue()}
 
 function moveOwned(collectionName,id,delta){const u=currentUser(),collection=state[collectionName],ownedIndexes=collection.map((item,index)=>item.userId===u?.id?index:-1).filter(index=>index>=0),position=ownedIndexes.findIndex(index=>collection[index].id===id),target=position+delta;if(position<0||target<0||target>=ownedIndexes.length)return;const a=ownedIndexes[position],b=ownedIndexes[target];[collection[a],collection[b]]=[collection[b],collection[a]];saveState();renderProfile()}
-function removeHistory(id,skipConfirm=false){const item=state.history.find(h=>h.id===id);if(!item||item.userId!==currentUser()?.id)return;if(!skipConfirm&&!confirm('Remove this song from your history?'))return;state.history=state.history.filter(h=>h.id!==id);saveState();renderProfile()}
+function removeHistory(id,skipConfirm=false){const item=state.history.find(h=>h.id===id),u=currentUser();if(!item||item.userId!==u?.id)return;if(!skipConfirm&&!confirm('Remove this song from your history?'))return;state.history=state.history.filter(h=>h.id!==id);state.historyTombstones=state.historyTombstones||{};const removed=Array.isArray(state.historyTombstones[u.id])?state.historyTombstones[u.id]:[];if(!removed.includes(id))state.historyTombstones[u.id]=[...removed,id].slice(-5000);saveState();renderProfile()}
 function renameProfile(){const u=currentUser();if(!u)return;const name=prompt('Singer name',u.name);if(name===null||!name.trim())return;u.name=name.trim();saveState();renderProfile();toast('Profile name updated')}
 async function changePassword(){const u=currentUser();if(!u)return;let currentHash=null;if(u.remoteProfile&&u.passwordHash==='REMOTE'){const current=prompt('Current password');if(current===null)return;currentHash=await hashPassword(current)}const password=prompt('New password — leave blank to remove it');if(password===null)return;const nextHash=password?await hashPassword(password):null;if(u.remoteProfile){try{await setSharedPassword(u.id,nextHash,currentHash);u.passwordHash=password?'REMOTE':null}catch(error){toast(error.message);return}}else u.passwordHash=nextHash;if(u.isAdmin){if(nextHash){sessionStorage.setItem(`bcd-admin-${u.id}`,nextHash);localStorage.setItem(`bcd-admin-${u.id}`,nextHash)}else{sessionStorage.removeItem(`bcd-admin-${u.id}`);localStorage.removeItem(`bcd-admin-${u.id}`)}}saveState();renderProfile();toast(password?'Password updated':'Password removed')}
 function renderProfile(){
