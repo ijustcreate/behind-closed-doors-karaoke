@@ -22,6 +22,28 @@
   let suspendedSite = null;
   let suspendedAriaHidden = null;
   let suspendedInert = false;
+  let suspendedScrollY = 0;
+  let entranceTimer = 0;
+  let hostFrame = 0;
+  let hostSample = null;
+
+  function stopHostSample() {
+    cancelAnimationFrame(hostFrame);
+    hostFrame = 0;
+  }
+
+  function startHostSample() {
+    stopHostSample();
+    hostSample = { startedAt:performance.now(), frames:0, last:0, maxGap:0 };
+    const tick = now => {
+      if (!diagnosticsOpen || !committed) return;
+      if (hostSample.last) hostSample.maxGap = Math.max(hostSample.maxGap, now - hostSample.last);
+      hostSample.last = now;
+      hostSample.frames++;
+      hostFrame = requestAnimationFrame(tick);
+    };
+    hostFrame = requestAnimationFrame(tick);
+  }
 
   // The karaoke app stays loaded so returning from the battle is instant, but
   // its view is made non-interactive and skipped by paint/layout while Encore
@@ -33,6 +55,7 @@
     if (!suspendedSite) return;
     suspendedAriaHidden = suspendedSite.getAttribute('aria-hidden');
     suspendedInert = !!suspendedSite.inert;
+    suspendedScrollY = scrollY;
     suspendedSite.inert = true;
     suspendedSite.setAttribute('aria-hidden', 'true');
     document.dispatchEvent(new CustomEvent('bcd:encore:active', { detail:{ active:true } }));
@@ -44,6 +67,7 @@
     if (suspendedAriaHidden === null) suspendedSite.removeAttribute('aria-hidden');
     else suspendedSite.setAttribute('aria-hidden', suspendedAriaHidden);
     suspendedSite = null;
+    window.scrollTo(0, suspendedScrollY);
     document.dispatchEvent(new CustomEvent('bcd:encore:active', { detail:{ active:false } }));
   }
 
@@ -137,6 +161,7 @@
     return [
       `Build  v${report.version || 'unknown'} · ${r.embedded ? 'embedded' : 'direct'}`,
       `FPS    ${p.presentedFps ?? 'n/a'} presented · ${p.rafFps ?? 'n/a'} rAF`,
+      `Host   ${hostSample ? (hostSample.frames / Math.max(.001,(performance.now() - hostSample.startedAt) / 1000)).toFixed(1) : 'n/a'} rAF · ${hostSample ? hostSample.maxGap.toFixed(1) : 'n/a'}ms max gap`,
       `Frame  ${p.averageFrameMs ?? 'n/a'}ms avg · ${p.maxFrameMs ?? 'n/a'}ms max · ${p.maxStallMs ?? 'n/a'}ms stall`,
       `Cost   update ${c.averageUpdateMs ?? 'n/a'}ms · draw ${c.averageRenderMs ?? 'n/a'}ms`,
       `View   ${d.viewport || 'unavailable'} · screen ${d.screen || 'unavailable'} · DPR ${d.dpr ?? 'unavailable'}`,
@@ -147,7 +172,7 @@
       `Room   ${roomMode} · status ${room.status || 'unavailable'} · admission ${room.admission || 'unavailable'}`,
       `Count  ${room.occupancyVerified ? `${room.players}/8 verified` : 'unavailable (not verified)'} · ${room.visibleRemotes ?? 'unavailable'} visible remotes`,
       `Assets rigs ${r.loadedRigs ?? 'unavailable'} loaded · ${Array.isArray(r.failedRigs) ? r.failedRigs.length : r.failedRigs ?? 'unavailable'} failed · images ${Array.isArray(r.failedImages) ? r.failedImages.length : r.failedImages ?? 'unavailable'} failed`,
-      `Sample ${report.sampleSeconds ?? 'unavailable'}s · frame gaps >50ms ${p.droppedFrames ?? 'unavailable'}`,
+      `Sample ${report.sampleSeconds ?? 'unavailable'}s · missed frame deadlines ${p.droppedFrames ?? 'unavailable'}`,
       `UA     ${d.userAgent || 'unavailable'}`,
       `N/A    ${Array.isArray(report.unavailable) ? report.unavailable.join(', ') : 'unavailable browser metrics not reported'}`
     ].join('\n');
@@ -171,9 +196,10 @@
     button.setAttribute('aria-expanded', String(diagnosticsOpen));
     panel.hidden = !diagnosticsOpen;
     if (diagnosticsOpen) {
+      startHostSample();
       diagnosticsReport = null; renderDiagnostics(); requestDiagnostics();
       clearInterval(diagnosticsTimer); diagnosticsTimer = setInterval(requestDiagnostics, 1000);
-    } else clearInterval(diagnosticsTimer);
+    } else { clearInterval(diagnosticsTimer); stopHostSample(); }
   }
 
   async function copyDiagnostics() {
@@ -297,8 +323,8 @@
     setTug(TUG_THRESHOLD);
     portal.classList.add('is-committed');
     document.body.classList.remove('encore-tugging');
-    document.body.classList.add('encore-portal-open');
     suspendSite();
+    document.body.classList.add('encore-portal-open');
     sendSession();
     const minimumDrama = options?.instant ? 100 : 420;
     setTimeout(() => {
@@ -308,14 +334,25 @@
   }
 
   function openCurtains() {
-    if (!portal || !committed) return;
+    if (!portal || !committed || portal.classList.contains('is-opening')) return;
     portal.classList.add('is-ready');
-    requestAnimationFrame(() => portal?.classList.add('is-opening'));
+    const openedPortal = portal;
+    requestAnimationFrame(() => {
+      if (portal !== openedPortal || !committed) return;
+      openedPortal.classList.add('is-opening');
+      clearTimeout(entranceTimer);
+      entranceTimer = setTimeout(() => {
+        if (portal === openedPortal && committed) openedPortal.classList.add('is-playing');
+      }, 1200);
+    });
   }
 
   function closePortal() {
     if (!portal) return;
     clearTimeout(reloadTimer);
+    clearTimeout(entranceTimer);
+    stopHostSample();
+    hostSample = null;
     clearInterval(diagnosticsTimer);
     disposalDone?.();
     reloadPending = false;
